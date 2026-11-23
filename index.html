@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Avanish Kumar Singh</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Avanish Kumar Singh, Ph.D. researcher at IIT Hyderabad. Physics-informed machine learning and neural solvers for semiconductor device simulation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: 1120px column. About = portrait + intro; then a featured panel for the flagship project,
+   card grids for current work, demos and certificates, and a dated log of updates. */
+:root {
+  --bg: #F3F5F6;
+  --surface: #FFFFFF;
+  --ink: #111921;
+  --muted: #56636F;
+  --line: #D8DEE3;
+  --accent: #2346C8;
+  --accent-soft: #E7ECFA;
+  --ok: #17775F;
+  --ok-soft: #E1F2EC;
+  --warn: #8A5A12;
+  --warn-soft: #F6ECDA;
+  --psi1: #2346C8;
+  --psi2: #0F8A7E;
+  --psi3: #B4561B;
+  --oxide: #C7D0D7;
+  --scrim: rgba(10, 15, 20, .82);
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1217; --surface: #131B22; --ink: #E5EBF0; --muted: #93A1AD; --line: #24303A;
+    --accent: #8098FF; --accent-soft: #1A2452; --ok: #5CCFA9; --ok-soft: #12302A;
+    --warn: #E6B567; --warn-soft: #33270F;
+    --psi1: #8098FF; --psi2: #3CC7B6; --psi3: #E89A5E; --oxide: #2B3843; --scrim: rgba(0, 0, 0, .85);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1217; --surface: #131B22; --ink: #E5EBF0; --muted: #93A1AD; --line: #24303A;
+  --accent: #8098FF; --accent-soft: #1A2452; --ok: #5CCFA9; --ok-soft: #12302A;
+  --warn: #E6B567; --warn-soft: #33270F;
+  --psi1: #8098FF; --psi2: #3CC7B6; --psi3: #E89A5E; --oxide: #2B3843; --scrim: rgba(0, 0, 0, .85);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6; margin: 0; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+img { max-width: 100%; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+sub, sup { line-height: 0; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+@media (min-width: 720px) { .wrap { padding-left: max(32px, env(safe-area-inset-left, 0px)); padding-right: max(32px, env(safe-area-inset-right, 0px)); } }
+
+/* top bar */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; gap: 24px; padding-block: 12px; }
+.mark { font-family: var(--display); font-weight: 700; font-stretch: 112%; font-size: 15px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; min-width: 0; margin-left: auto; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a { font-size: 14px; color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; white-space: nowrap; }
+.nav a:hover { color: var(--ink); background: var(--accent-soft); }
+
+/* shared section scaffolding */
+section.block { border-top: 1px solid var(--line); padding-block: 64px; }
+@media (max-width: 720px) { section.block { padding-block: 44px; } }
+.sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px; margin-bottom: 28px; }
+.sec-head h2 { font-family: var(--display); font-weight: 700; font-stretch: 112%; font-size: clamp(24px, 3vw, 30px); line-height: 1.1; margin: 0; letter-spacing: -.01em; }
+.sec-head p { margin: 0; color: var(--muted); font-size: 15px; max-width: 34em; }
+.label { font: 500 12px/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.pill { display: inline-block; font: 500 11.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.pub { background: var(--ok-soft); color: var(--ok); }
+.pill.rev { background: var(--accent-soft); color: var(--accent); }
+.pill.dev { background: var(--warn-soft); color: var(--warn); }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 14.5px/1 var(--body); text-decoration: none; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.num-i { font-family: var(--mono); font-size: .93em; font-variant-numeric: tabular-nums; }
+
+/* ---------- about ---------- */
+.about { padding-block: 56px 56px; }
+.about .wrap { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; align-items: start; }
+@media (max-width: 760px) { .about .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; } .about { padding-block: 32px 44px; } }
+.portrait { position: relative; width: 100%; max-width: 240px; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: var(--accent-soft); border: 1px solid var(--line); }
+@media (max-width: 760px) { .portrait { max-width: 160px; } }
+.portrait .mono { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-stretch: 120%; font-size: 56px; color: var(--accent); letter-spacing: -.02em; }
+.portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.side-facts { margin-top: 16px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
+@media (max-width: 760px) { .side-facts { display: none; } }
+.eyebrow { font-family: var(--mono); font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+.eyebrow b { color: var(--accent); font-weight: 500; }
+h1 { font-family: var(--display); font-weight: 800; font-stretch: 118%; font-size: clamp(38px, 6vw, 62px); line-height: .98; letter-spacing: -.02em; margin: 0 0 22px; text-wrap: balance; }
+.intro p { margin: 0 0 14px; max-width: 38em; font-size: 17px; }
+.intro p.lead { font-size: clamp(18px, 2vw, 20px); line-height: 1.5; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 24px; padding: 0; list-style: none; }
+.chips li { font-size: 13.5px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ---------- featured ---------- */
+.feature { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: clamp(20px, 3.5vw, 36px); display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+.feature-top { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 36px; }
+@media (max-width: 860px) { .feature-top { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+.feature h3 { font-family: var(--display); font-weight: 700; font-stretch: 108%; font-size: clamp(22px, 2.6vw, 28px); line-height: 1.15; margin: 10px 0 14px; text-wrap: balance; }
+.feature p { margin: 0 0 12px; max-width: 40em; }
+.feature .note { font-size: 14px; color: var(--muted); }
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.facts li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; padding-block: 12px; border-bottom: 1px solid var(--line); align-items: baseline; }
+.facts li:first-child { padding-top: 0; }
+.facts li:last-child { border-bottom: 0; }
+.facts .k { font-family: var(--display); font-weight: 700; font-stretch: 108%; font-size: 20px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.facts .v { font-size: 15px; }
+.diagram { overflow-x: auto; border-top: 1px solid var(--line); padding-top: 24px; }
+.diagram svg { min-width: 640px; width: 100%; height: auto; display: block; }
+.diagram text { font-family: var(--mono); font-size: 12.5px; fill: var(--ink); }
+.diagram .cap { fill: var(--muted); font-size: 12px; }
+.diagram .row { fill: var(--muted); font-size: 11.5px; letter-spacing: .07em; }
+.diagram .box { fill: var(--bg); stroke: var(--line); stroke-width: 1.2; }
+.diagram .box.hot { fill: var(--accent-soft); stroke: var(--accent); }
+.diagram .hot-t { fill: var(--accent); font-weight: 500; }
+.diagram .arr { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.diagram .arr.hot { stroke: var(--accent); }
+
+/* ---------- current work ---------- */
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 720px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card .top { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+.card h3 { font-family: var(--display); font-stretch: 104%; font-weight: 600; font-size: 18.5px; line-height: 1.3; margin: 0; text-wrap: balance; }
+.card p { margin: 0; font-size: 15px; }
+.card .stat { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: baseline; }
+.card .stat b { font-family: var(--display); font-weight: 700; font-stretch: 108%; font-size: 22px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.card .stat span { font-size: 13.5px; color: var(--muted); }
+.card .links { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 14.5px; font-weight: 500; }
+
+/* ---------- publications ---------- */
+.pubs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pubs li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 20px; padding-block: 20px; border-bottom: 1px solid var(--line); }
+.pubs li:first-child { padding-top: 0; }
+.pubs li:last-child { border-bottom: 0; }
+@media (max-width: 560px) { .pubs li { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
+.pubs .yr { font-family: var(--mono); font-size: 14px; color: var(--muted); padding-top: 2px; }
+.pubs .ttl { font-family: var(--display); font-stretch: 102%; font-weight: 600; font-size: 17.5px; line-height: 1.35; }
+.pubs .auth { color: var(--muted); font-size: 14.5px; margin-top: 4px; }
+.pubs .auth b { color: var(--ink); font-weight: 600; }
+.pubs .venue { font-size: 14.5px; font-style: italic; margin-top: 2px; }
+.pubs .row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 8px; font-size: 14px; }
+.pubs .row a { font-family: var(--mono); font-size: 13px; }
+
+/* ---------- playground ---------- */
+.instrument { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; margin-top: 20px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .instrument { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
+.instrument h3 { font-family: var(--display); font-stretch: 104%; font-weight: 600; font-size: 18.5px; margin: 8px 0 8px; }
+.instrument .side p { font-size: 15px; margin: 0 0 12px; }
+.plot { width: 100%; height: auto; display: block; }
+.plot text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.plot .ox { fill: url(#hatch); }
+.plot .oxedge { stroke: var(--muted); stroke-width: 1; }
+.plot .axis { stroke: var(--line); stroke-width: 1; }
+.plot .band { fill: none; stroke: var(--ink); stroke-width: 2; }
+.plot .lvl { stroke-width: 1.2; stroke-dasharray: 3 3; }
+.plot .wf { stroke-width: 1.6; }
+.plot .c1 { stroke: var(--psi1); fill: color-mix(in srgb, var(--psi1) 18%, transparent); }
+.plot .c2 { stroke: var(--psi2); fill: color-mix(in srgb, var(--psi2) 18%, transparent); }
+.plot .c3 { stroke: var(--psi3); fill: color-mix(in srgb, var(--psi3) 18%, transparent); }
+.plot .lvl.c1, .plot .lvl.c2, .plot .lvl.c3 { fill: none; }
+.plot text.t1 { fill: var(--psi1); } .plot text.t2 { fill: var(--psi2); } .plot text.t3 { fill: var(--psi3); }
+.controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin: 16px 0 0; }
+.ctl label { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--muted); margin-bottom: 4px; }
+.ctl output { font-family: var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.readout { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.readout i { font-style: normal; display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+.caption { font-size: 13px; color: var(--muted); margin: 12px 0 0; line-height: 1.5; }
+
+/* ---------- certificates ---------- */
+.certs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 900px) { .certs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .certs { grid-template-columns: minmax(0, 1fr); } }
+.cert { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.cert button.thumb { all: unset; cursor: zoom-in; display: block; aspect-ratio: 16 / 11; background: #fff; border-bottom: 1px solid var(--line); overflow: hidden; }
+.cert button.thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cert .thumb img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; transition: transform .25s ease; }
+.cert button.thumb:hover img { transform: scale(1.03); }
+@media (prefers-reduced-motion: reduce) { .cert .thumb img { transition: none; } }
+.cert .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.cert .issuer { font: 500 12px/1.3 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.cert h3 { font-family: var(--display); font-stretch: 104%; font-weight: 600; font-size: 17px; line-height: 1.3; margin: 2px 0 0; }
+.cert .meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 10px; font-size: 14px; }
+.cert .meta .d { font-family: var(--mono); color: var(--muted); font-size: 13px; }
+.inprog { margin-top: 28px; }
+.inprog h3 { margin: 0 0 12px; }
+.inprog ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; }
+@media (max-width: 640px) { .inprog ul { grid-template-columns: minmax(0, 1fr); } }
+.inprog li { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 10px; font-size: 15px; }
+.inprog li span.who { color: var(--muted); font-size: 13.5px; margin-left: auto; white-space: nowrap; }
+dialog.viewer { border: 0; padding: 0; background: transparent; max-width: min(1100px, 94vw); width: 100%; }
+dialog.viewer::backdrop { background: var(--scrim); }
+dialog.viewer img { width: 100%; height: auto; display: block; border-radius: 8px; background: #fff; }
+dialog.viewer .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; color: #fff; font-size: 14px; }
+dialog.viewer button { font: 500 14px/1 var(--body); padding: 9px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,.4); background: transparent; color: #fff; cursor: pointer; }
+
+/* ---------- updates ---------- */
+.log { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 0 28px; }
+@media (max-width: 560px) { .log { grid-template-columns: minmax(0, 1fr); } }
+.log .year { font-family: var(--display); font-weight: 700; font-stretch: 110%; font-size: 22px; color: var(--muted); padding-top: 14px; border-top: 1px solid var(--line); }
+.log ul { list-style: none; margin: 0 0 24px; padding: 0; border-top: 1px solid var(--line); }
+@media (max-width: 560px) { .log .year { border-top: 0; padding-top: 0; } }
+.log li { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; padding-block: 14px; border-bottom: 1px solid var(--line); }
+.log li:last-child { border-bottom: 0; }
+.log .m { font-family: var(--mono); font-size: 13px; color: var(--muted); padding-top: 2px; }
+.log .t { font-size: 15.5px; }
+.log .t b { font-weight: 600; }
+
+/* ---------- contact ---------- */
+.contact { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+@media (max-width: 860px) { .contact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .contact { grid-template-columns: minmax(0, 1fr); } }
+.contact .label { display: block; margin-bottom: 8px; }
+.contact p { margin: 0; font-size: 15px; word-break: break-word; }
+.copy { font: 500 12.5px/1 var(--mono); padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; margin-top: 8px; }
+.copy:hover { color: var(--ink); border-color: var(--accent); }
+footer { border-top: 1px solid var(--line); padding-block: 24px 40px; font-size: 13.5px; color: var(--muted); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+/* ---------- featured (detailed) ---------- */
+.feature { gap: 36px; }
+.f-head h3 { font-size: clamp(24px, 3vw, 32px); margin: 12px 0 10px; }
+.f-head .sub { font-size: 17.5px; color: var(--muted); margin: 0; max-width: 40em; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.feature h4.label { margin: 0 0 10px; }
+.f-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start; border-top: 1px solid var(--line); padding-top: 32px; }
+.f-row .f-text h4 + p + h4, .f-row .f-text p + h4 { margin-top: 22px; }
+@media (max-width: 860px) { .f-row { grid-template-columns: minmax(0, 1fr); gap: 20px; } .f-row.rev .fig { order: 2; } }
+.f-block { border-top: 1px solid var(--line); padding-top: 32px; }
+.fig { margin: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+.fig figcaption { font-size: 13.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+.sch { width: 100%; height: auto; display: block; }
+.sch text { font-family: var(--mono); font-size: 11.5px; fill: var(--ink); }
+.sch .dim { fill: var(--muted); }
+.sch .lbl.strong { font-weight: 500; }
+.sch .lbl.acc, .sch .mtxt { fill: var(--accent); }
+.sch .gate { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.sch .oxide { fill: var(--warn-soft); stroke: var(--line); }
+.sch .semi { fill: var(--accent-soft); stroke: var(--line); }
+.sch .sd { fill: var(--ok-soft); stroke: var(--line); }
+.sch .dimline { stroke: var(--ink); stroke-width: 1.1; fill: none; }
+.sch .mass { stroke: var(--accent); stroke-width: 1.6; }
+.sch .chan { fill: var(--accent-soft); opacity: .6; }
+.sch .ref { stroke: var(--line); stroke-dasharray: 3 3; }
+.sch .band0 { fill: none; stroke: var(--ink); stroke-width: 2; }
+.sch .band1 { fill: none; stroke: var(--accent); stroke-width: 2.2; }
+.sch .vline { stroke: var(--muted); stroke-width: 1.1; }
+.sch .vline.acc { stroke: var(--accent); }
+.inputs { list-style: none; margin: 16px 0 24px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 700px) { .inputs { grid-template-columns: minmax(0, 1fr); } }
+.inputs li { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; background: var(--bg); }
+.inputs b { font-weight: 600; font-size: 15px; }
+.inputs span { font-size: 14px; color: var(--muted); }
+.diagram { border-top: 0; padding-top: 0; }
+.diagram .frame { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.diagram .bt { font-weight: 500; }
+.parts { margin: 24px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 12px; max-width: 46em; }
+.parts li { font-size: 15.5px; }
+.parts li::marker { font-family: var(--mono); color: var(--accent); }
+.eq { margin: 18px 0 0; padding: 18px 20px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); overflow-x: auto; display: flex; align-items: center; gap: 4px; white-space: nowrap; font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif; font-size: 19px; font-style: italic; }
+.eq .br { font-size: 30px; font-style: normal; font-weight: 300; }
+.eq .frac { display: inline-flex; flex-direction: column; align-items: center; font-size: 15px; padding-inline: 2px; }
+.eq .frac span:first-child { border-bottom: 1px solid var(--ink); padding-bottom: 1px; }
+.enables { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.enables li { font-size: 15.5px; }
+
+/* ---------- talks ---------- */
+.events { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 48px; }
+@media (max-width: 760px) { .events { grid-template-columns: minmax(0, 1fr); } }
+.ev-group h3 { margin: 0 0 6px; }
+.ev { list-style: none; margin: 0; padding: 0; }
+.ev li { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; padding-block: 16px; border-bottom: 1px solid var(--line); }
+.ev li:last-child { border-bottom: 0; }
+.ev .yr { font-family: var(--mono); font-size: 13.5px; color: var(--muted); padding-top: 2px; }
+.ev-t { font-family: var(--display); font-stretch: 104%; font-weight: 600; font-size: 17px; line-height: 1.3; }
+.ev-p { font-size: 14px; color: var(--muted); }
+.ev p { margin: 6px 0 0; font-size: 15px; }
+
+/* ---------- certificate list ---------- */
+.certlist { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.certlist li { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 90px; gap: 6px 20px; align-items: baseline; padding-block: 14px; border-bottom: 1px solid var(--line); }
+@media (max-width: 640px) { .certlist li { grid-template-columns: minmax(0, 1fr) auto; } .certlist .iss { grid-column: 1 / -1; grid-row: 2; } }
+.certlist a[data-view] { font-weight: 600; font-size: 16px; }
+.certlist .iss { font-size: 14px; color: var(--muted); }
+.certlist .d { font-family: var(--mono); font-size: 13px; color: var(--muted); text-align: right; }
+
+/* ---------- wide RL card ---------- */
+.card.wide { grid-column: 1 / -1; }
+.rl { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .rl { grid-template-columns: minmax(0, 1fr); gap: 18px; } }
+.rl-text p { margin: 0 0 12px; }
+.pivot { margin-top: 4px; padding: 14px 16px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); }
+.pivot .label { display: block; margin-bottom: 8px; }
+.pivot p { margin: 0; font-size: 14.5px; color: var(--muted); }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.tbl th, .tbl td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl tr:last-child th, .tbl tr:last-child td { border-bottom: 0; }
+.tbl thead th { font: 500 11.5px/1.2 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+.tbl tbody th { text-align: left; font-weight: 500; white-space: normal; }
+.tbl td { font-family: var(--mono); font-size: 13.5px; }
+.tbl td.hi { color: var(--accent); font-weight: 500; }
+.tnote { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.card .stat .code-link { margin-left: auto; font-size: 14.5px; font-weight: 500; white-space: nowrap; }
+.card .stat { flex-wrap: wrap; }
+.knobs { margin: 0 0 12px; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.knobs li { font-size: 15px; }
+.knobs b { font-weight: 600; }
+.card .stat .priv { margin-left: auto; font-size: 13px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+
+/* ---------- published work under the highlight ---------- */
+.papers-head { margin: 44px 0 16px; }
+.papers-head h3 { margin: 0 0 6px; }
+.papers-head p { margin: 0; color: var(--muted); font-size: 15px; }
+.papers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 900px) { .papers { grid-template-columns: minmax(0, 1fr); } }
+.paper { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.p-meta { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.p-meta .label { line-height: 1.4; }
+.paper h4 { font-family: var(--display); font-weight: 600; font-stretch: 104%; font-size: 18px; line-height: 1.3; margin: 0; text-wrap: balance; }
+.paper p { margin: 0; font-size: 15px; }
+.p-link { margin-top: auto; padding-top: 4px; font-size: 14.5px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="mark" href="#top">A.&nbsp;K.&nbsp;Singh</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#featured">Research</a>
+      <a href="#now">Current work</a>
+      <a href="#publications">Publications</a>
+      <a href="#talks">Talks</a>
+      <a href="#demos">Demos</a>
+      <a href="#certificates">Certificates</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ ABOUT ============ -->
+  <section class="about" aria-label="About">
+    <div class="wrap">
+      <div>
+        <!-- PROFILE PHOTO: save your photo as photo.jpg next to this file (portrait, about 800×1000 px). -->
+        <div class="portrait">
+          <div class="mono" aria-hidden="true">AKS</div>
+          <img src="photo.jpg" alt="Avanish Kumar Singh" onerror="this.hidden=true">
+        </div>
+        <div class="side-facts">
+          <span>IIT Hyderabad</span>
+          <span>Hyderabad, India</span>
+        </div>
+      </div>
+      <div class="intro">
+        <p class="eyebrow"><b>Ph.D. researcher</b> · Electrical Engineering · IIT Hyderabad</p>
+        <h1>Avanish Kumar Singh</h1>
+        <p class="lead">I teach neural networks to solve the physics inside transistors.</p>
+        <p>Simulating a modern transistor means solving coupled equations for charge, potential and quantum confinement again and again until they agree. That loop takes seconds per bias point and sometimes never converges. I build machine-learning solvers that learn the converged answer, so a full current–voltage curve comes back in a fraction of a second.</p>
+        <p>I do this in <a href="https://sites.google.com/ee.iith.ac.in/drovesbadami/home" target="_blank" rel="noopener">Dr. Oves Badami's group</a>, developing ML-based TCAD tools for FinFETs and stacked-nanosheet devices. I also write the solvers that produce the training data, from 1D Schrödinger–Poisson up to 3D quantum transport. This page is where I post what I'm working on.</p>
+        <ul class="chips" aria-label="Research interests">
+          <li>Physics-informed ML</li>
+          <li>Neural PDE solvers</li>
+          <li>Operator learning</li>
+          <li>Device simulation (TCAD)</li>
+          <li>Quantum transport</li>
+        </ul>
+        <div class="actions">
+          <a class="btn primary" href="https://scholar.google.com/citations?user=8dKXEyQAAAAJ" target="_blank" rel="noopener">Google Scholar</a>
+          <a class="btn" href="https://github.com/avanish-singh" target="_blank" rel="noopener">GitHub</a>
+          <a class="btn" href="https://www.tensortonic.com/profile/avi_01071999" target="_blank" rel="noopener">TensorTonic (ML coding)</a>
+          <a class="btn" href="#contact">Contact</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESEARCH HIGHLIGHT ============ -->
+  <section class="block" id="featured">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Research highlight</h2>
+      </div>
+      <article class="feature">
+        <header class="f-head">
+          <div class="tags"><span class="pill dev">Manuscript in preparation</span><span class="pill rev">Sobolev-trained</span></div>
+          <h3>Hybrid physics-informed neural solver for quantum-corrected simulation of 3D FETs</h3>
+          <p class="sub">Trained networks replace the slow, iterative quantum-corrected simulation of FinFETs and stacked nanosheets, returning spatial profiles and drain current in a single forward pass.</p>
+        </header>
+
+        <div class="f-row">
+          <div class="f-text">
+            <h4 class="label">The problem</h4>
+            <p>Simulating modern transistors such as FinFETs and stacked nanosheets accurately is slow and fragile. Conventional TCAD meshes the device and iterates the coupled Schrödinger–Poisson and transport equations until they converge. That takes seconds to minutes per bias point, and once quantum confinement is included it sometimes fails to converge at all. Exploring a large design space this way is expensive.</p>
+          </div>
+          <figure class="fig">
+            <svg class="sch" viewBox="0 0 420 250" role="img" aria-label="Double-gate transistor cross-section: source and drain on either side of a semiconductor body of thickness T and channel length L c, with gate oxides of thickness T ox above and below.">
+              <defs>
+                <marker id="dm" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--ink)"></path></marker>
+                <marker id="mm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--accent)"></path></marker>
+              </defs>
+              <text class="dim" x="210" y="22" text-anchor="middle">Gate · V<tspan baseline-shift="sub" font-size="8">GS</tspan></text>
+              <line x1="110" y1="34" x2="310" y2="34" class="gate"></line>
+              <rect x="110" y="36" width="200" height="26" class="oxide"></rect>
+              <text class="lbl" x="290" y="54" text-anchor="end">oxide</text>
+              <rect x="110" y="62" width="200" height="86" class="semi"></rect>
+              <rect x="110" y="148" width="200" height="26" class="oxide"></rect>
+              <text class="lbl" x="290" y="166" text-anchor="end">oxide</text>
+              <line x1="110" y1="176" x2="310" y2="176" class="gate"></line>
+              <text class="dim" x="210" y="196" text-anchor="middle">Gate · V<tspan baseline-shift="sub" font-size="8">GS</tspan></text>
+              <rect x="40" y="62" width="70" height="86" class="sd"></rect>
+              <rect x="310" y="62" width="70" height="86" class="sd"></rect>
+              <text class="lbl strong" x="75" y="109" text-anchor="middle">Source</text>
+              <text class="lbl strong" x="345" y="109" text-anchor="middle">Drain</text>
+              <text class="dim" x="75" y="166" text-anchor="middle">ground</text>
+              <text class="dim" x="345" y="166" text-anchor="middle">V<tspan baseline-shift="sub" font-size="8">DS</tspan></text>
+              <line x1="128" y1="66" x2="128" y2="144" class="dimline" marker-start="url(#dm)" marker-end="url(#dm)"></line>
+              <text class="lbl" x="136" y="92">T</text>
+              <line x1="114" y1="118" x2="306" y2="118" class="dimline" marker-start="url(#dm)" marker-end="url(#dm)"></line>
+              <text class="lbl" x="210" y="112" text-anchor="middle">L<tspan baseline-shift="sub" font-size="8">c</tspan></text>
+              <text class="lbl" x="210" y="139" text-anchor="middle">semiconductor</text>
+              <line x1="146" y1="150" x2="146" y2="172" class="dimline" marker-start="url(#dm)" marker-end="url(#dm)"></line>
+              <text class="lbl" x="152" y="166">T<tspan baseline-shift="sub" font-size="8">ox</tspan></text>
+              <g transform="translate(370 4)">
+                <line x1="0" y1="8" x2="34" y2="8" class="dimline" marker-end="url(#dm)"></line>
+                <line x1="0" y1="8" x2="0" y2="40" class="dimline" marker-end="url(#dm)"></line>
+                <text class="dim" x="36" y="22">x</text>
+                <text class="dim" x="6" y="44">y</text>
+              </g>
+              <g transform="translate(300 222)">
+                <line x1="40" y1="0" x2="80" y2="-10" class="mass" marker-end="url(#mm)"></line>
+                <line x1="40" y1="0" x2="4" y2="-10" class="mass" marker-end="url(#mm)"></line>
+                <line x1="40" y1="0" x2="40" y2="22" class="mass" marker-end="url(#mm)"></line>
+                <text class="mtxt" x="84" y="-10">m<tspan baseline-shift="sub" font-size="8">x</tspan></text>
+                <text class="mtxt" x="-16" y="-10">m<tspan baseline-shift="sub" font-size="8">z</tspan></text>
+                <text class="mtxt" x="46" y="22">m<tspan baseline-shift="sub" font-size="8">y</tspan></text>
+              </g>
+            </svg>
+            <figcaption>The simulated structure: a semiconductor body of thickness T and channel length L<sub>c</sub> between two gate oxides of thickness T<sub>ox</sub>. The effective masses m<sub>x</sub>, m<sub>y</sub>, m<sub>z</sub> encode crystal orientation and strain.</figcaption>
+          </figure>
+        </div>
+
+        <div class="f-block">
+          <h4 class="label">The approach</h4>
+          <p>A hybrid framework: neural networks learn the parts that are expensive to solve, and well-understood physics turns their outputs into terminal current. It takes three groups of inputs.</p>
+          <ul class="inputs">
+            <li><b>Biasing</b><span>Gate and drain voltages</span></li>
+            <li><b>Device geometry</b><span>Semiconductor body and oxide thickness</span></li>
+            <li><b>Material parameters</b><span>Effective masses, capturing crystal orientation and strain</span></li>
+          </ul>
+          <div class="diagram" role="img" aria-label="Workflow: biasing, device geometry and material parameters feed spatial-profile networks and a barrier network. The predicted density goes to an integrator, and the integrated charge, potential and barrier lowering feed a physics-based current module. Outputs are n 3D of x, V of x, and I DS.">
+            <svg viewBox="0 0 760 300">
+              <defs>
+                <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"></path></marker>
+                <marker id="ahh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"></path></marker>
+              </defs>
+              <rect class="frame" x="128" y="14" width="510" height="272" rx="12"></rect>
+              <text x="112" y="76" text-anchor="end">Biasing</text>
+              <text x="112" y="146" text-anchor="end">Device</text>
+              <text x="112" y="162" text-anchor="end">geometry</text>
+              <text x="112" y="226" text-anchor="end">Material</text>
+              <text x="112" y="242" text-anchor="end">parameters</text>
+              <line class="arr" x1="80" y1="86" x2="126" y2="86" marker-end="url(#ah)"></line>
+              <line class="arr" x1="80" y1="172" x2="126" y2="172" marker-end="url(#ah)"></line>
+              <line class="arr" x1="80" y1="252" x2="126" y2="252" marker-end="url(#ah)"></line>
+
+              <rect class="box" x="148" y="36" width="210" height="70" rx="8"></rect>
+              <text class="bt" x="253" y="62" text-anchor="middle">Spatial-profile networks</text>
+              <text class="cap" x="253" y="84" text-anchor="middle">n<tspan baseline-shift="sub" font-size="9">3D</tspan>(x), V(x) at V<tspan baseline-shift="sub" font-size="9">DS</tspan> ≈ 0</text>
+
+              <rect class="box" x="412" y="36" width="206" height="70" rx="8"></rect>
+              <text class="bt" x="515" y="62" text-anchor="middle">Integrator</text>
+              <text class="cap" x="515" y="84" text-anchor="middle">n<tspan baseline-shift="sub" font-size="9">LD</tspan> = ∫ n<tspan baseline-shift="sub" font-size="9">3D</tspan> dx</text>
+
+              <rect class="box" x="148" y="200" width="210" height="70" rx="8"></rect>
+              <text class="bt" x="253" y="226" text-anchor="middle">Barrier network</text>
+              <text class="cap" x="253" y="248" text-anchor="middle">φ<tspan baseline-shift="sub" font-size="9">ZD</tspan> and φ<tspan baseline-shift="sub" font-size="9">AD</tspan></text>
+
+              <rect class="box hot" x="412" y="186" width="206" height="84" rx="8"></rect>
+              <text class="hot-t" x="515" y="216" text-anchor="middle">Current module</text>
+              <text class="cap" x="515" y="238" text-anchor="middle">physics-based I<tspan baseline-shift="sub" font-size="9">DS</tspan></text>
+              <text class="cap" x="515" y="254" text-anchor="middle">with mobility model</text>
+
+              <line class="arr" x1="358" y1="71" x2="410" y2="71" marker-end="url(#ah)"></line>
+              <text class="cap" x="384" y="64" text-anchor="middle">n<tspan baseline-shift="sub" font-size="9">3D</tspan></text>
+              <line class="arr" x1="515" y1="106" x2="515" y2="184" marker-end="url(#ah)"></line>
+              <polyline class="arr" points="253,106 253,150 460,150 460,184" marker-end="url(#ah)"></polyline>
+              <text class="cap" x="300" y="143">V</text>
+              <line class="arr hot" x1="358" y1="235" x2="410" y2="235" marker-end="url(#ahh)"></line>
+              <text class="cap" x="384" y="228" text-anchor="middle">Δφ</text>
+
+              <line class="arr" x1="640" y1="71" x2="690" y2="71" marker-end="url(#ah)"></line>
+              <text x="696" y="75">n<tspan baseline-shift="sub" font-size="9">3D</tspan>(x)</text>
+              <line class="arr" x1="640" y1="150" x2="690" y2="150" marker-end="url(#ah)"></line>
+              <text x="696" y="154">V(x)</text>
+              <line class="arr hot" x1="618" y1="228" x2="690" y2="228" marker-end="url(#ahh)"></line>
+              <text class="hot-t" x="696" y="232">I<tspan baseline-shift="sub" font-size="9">DS</tspan></text>
+            </svg>
+          </div>
+          <ol class="parts">
+            <li><b>Spatial-profile networks</b> predict the full electron-density profile n<sub>3D</sub>(x) and the electrostatic-potential profile V(x) across the channel cross-section at low drain bias, in one pass and with no iteration.</li>
+            <li><b>Barrier network</b> predicts the source–channel barrier at zero drain bias (φ<sub>ZD</sub>) and at the applied drain bias (φ<sub>AD</sub>). As drain voltage increases, the drain's electric field reaches into the channel and lowers the barrier. This is drain-induced barrier lowering, and the network captures how much the barrier drops for each bias combination.</li>
+            <li><b>Physics-based current module</b> integrates the density into a line charge density, n<sub>LD</sub> = ∫ n<sub>3D</sub> dx. More carriers flow over a lowered barrier, so the charge is scaled exponentially by the barrier reduction and combined with a mobility model that accounts for doping and electric-field degradation:</li>
+          </ol>
+          <div class="eq" role="math" aria-label="I D S equals q times n L D times the exponential of q times phi Z D minus phi A D over k B T, times mu of V and E lat, times E lat">
+            <span>I<sub>DS</sub> = q · n<sub>LD</sub> · exp</span><span class="br">[</span><span class="frac"><span>q(φ<sub>ZD</sub> − φ<sub>AD</sub>)</span><span>k<sub>B</sub>T</span></span><span class="br">]</span><span>· μ(V, E<sub>lat</sub>) · E<sub>lat</sub></span>
+          </div>
+        </div>
+
+        <div class="f-row rev">
+          <figure class="fig">
+            <svg class="sch" viewBox="0 0 420 240" role="img" aria-label="Schematic conduction-band profile from source to drain. At zero drain bias the source-channel barrier has height phi Z D. With drain bias applied the drain side drops by q V D S and the barrier lowers to phi A D.">
+              <defs>
+                <marker id="bm" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--muted)"></path></marker>
+              </defs>
+              <rect x="120" y="20" width="190" height="190" class="chan"></rect>
+              <text class="dim" x="75" y="226" text-anchor="middle">Source</text>
+              <text class="dim" x="215" y="226" text-anchor="middle">Channel</text>
+              <text class="dim" x="360" y="226" text-anchor="middle">Drain</text>
+              <line x1="30" y1="170" x2="400" y2="170" class="ref"></line>
+              <path class="band0" d="M30 170 L100 170 C130 170 140 70 172 70 L250 70 C282 70 292 170 322 170 L400 170"></path>
+              <path class="band1" d="M30 170 L100 170 C126 170 142 96 174 96 C222 96 252 116 282 158 C300 186 312 200 336 200 L400 200"></path>
+              <line x1="228" y1="168" x2="228" y2="74" class="vline" marker-start="url(#bm)" marker-end="url(#bm)"></line>
+              <text class="lbl" x="234" y="128">φ<tspan baseline-shift="sub" font-size="8">ZD</tspan></text>
+              <line x1="166" y1="168" x2="166" y2="100" class="vline acc" marker-start="url(#bm)" marker-end="url(#bm)"></line>
+              <text class="lbl acc" x="172" y="150">φ<tspan baseline-shift="sub" font-size="8">AD</tspan></text>
+              <line x1="372" y1="172" x2="372" y2="198" class="vline" marker-start="url(#bm)" marker-end="url(#bm)"></line>
+              <text class="dim" x="366" y="190" text-anchor="end">qV<tspan baseline-shift="sub" font-size="8">DS</tspan></text>
+              <g transform="translate(318 34)">
+                <line x1="0" y1="0" x2="22" y2="0" class="band0"></line>
+                <text class="dim" x="28" y="4">V<tspan baseline-shift="sub" font-size="8">DS</tspan> ≈ 0</text>
+                <line x1="0" y1="18" x2="22" y2="18" class="band1"></line>
+                <text class="dim" x="28" y="22">V<tspan baseline-shift="sub" font-size="8">DS</tspan> &gt; 0</text>
+              </g>
+            </svg>
+            <figcaption>Source–channel barrier at zero and applied drain bias (schematic). The barrier network predicts this lowering across gate and drain voltage.</figcaption>
+          </figure>
+          <div class="f-text">
+            <h4 class="label">Why it stays physical</h4>
+            <p>The networks are trained to respect physical behavior, not only to fit numbers. They reproduce how the device responds to changes in bias and geometry, and they obey the expected gate-control trends. The current itself comes from an interpretable physical model rather than a black box, so the predictions hold up beyond the conditions seen in training.</p>
+            <h4 class="label">What it enables</h4>
+            <ul class="enables">
+              <li>Full I–V sweeps in a fraction of a second, with no convergence failures.</li>
+              <li>Fast exploration across thickness, bias, orientation and strain.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="note">Full results and code will be shared once the paper is published.</p>
+      </article>
+
+      <!-- Published papers behind the highlight. Newest first. Describe the work only; results stay in the papers. -->
+      <div class="papers-head">
+        <h3 class="label">Published work behind it</h3>
+        <p>The papers this project builds on. Results are in each paper.</p>
+      </div>
+      <div class="papers">
+        <article class="paper">
+          <div class="p-meta"><span class="pill rev">Preprint</span><span class="label">2026 · EUROSOI-ULIS</span></div>
+          <h4>Real Time Simulations of Advanced MOSFETs</h4>
+          <p>Takes the neural solver from equilibrium electrostatics to drain-current simulation of stacked-nanosheet FETs. It introduces gradient-aware sampling, which places more training devices where the solution changes quickly with channel thickness, and synthetic training data built from how a MOSFET operates.</p>
+          <a class="p-link" href="https://doi.org/10.2139/ssrn.7398600" target="_blank" rel="noopener">Read the preprint</a>
+        </article>
+        <article class="paper">
+          <div class="p-meta"><span class="pill pub">Journal</span><span class="label">2025 · Adv. Theory Simul.</span></div>
+          <h4>Real Time Electrostatics of Double Gate FETs With Neural Networks</h4>
+          <p>A neural solver for the self-consistent Schrödinger–Poisson problem in double-gate FETs, whose electrostatics stand in for FinFETs and stacked nanosheets. Separate networks predict the electrostatic potential, electron density, subband energies and wavefunctions across channel thickness and gate bias.</p>
+          <a class="p-link" href="https://doi.org/10.1002/adts.202500686" target="_blank" rel="noopener">Read the paper</a>
+        </article>
+        <article class="paper">
+          <div class="p-meta"><span class="pill pub">Conference</span><span class="label">2024 · IEEE EDTM</span></div>
+          <h4>Accurate and fast electrostatic simulation of double gate FETs using deep neural network</h4>
+          <p>The first step: a deep neural network that returns the self-consistent electrostatic potential and subband energies of a double-gate FET across channel thickness and effective mass. Writing the potential as a polynomial lets one network cover every device size, whatever the mesh.</p>
+          <a class="p-link" href="https://doi.org/10.1109/EDTM58488.2024.10511954" target="_blank" rel="noopener">Read the paper</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CURRENT WORK ============ -->
+  <section class="block" id="now">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>What I'm working on</h2>
+        <p>Ongoing projects, roughly in order of how much of my week they take.</p>
+      </div>
+      <div class="grid2">
+        <article class="card">
+          <div class="top"><span class="label">With Google</span><span class="pill dev">Ongoing</span></div>
+          <h3>Thermal surrogate for 3D chip packaging</h3>
+          <p>Stacked chips get hot, and every through-silicon-via layout needs a finite-element simulation to check it. I'm training a compact multi-task model that predicts the peak temperature rise of a layout it has never seen, trained on COMSOL simulations.</p>
+          <div class="stat"><b>0.39%</b><span>mean error on held-out layouts in early results</span></div>
+        </article>
+        <article class="card">
+          <div class="top"><span class="label">Quantum transport</span><span class="pill dev">Models in development</span></div>
+          <h3>Operator learning for NEGF simulations</h3>
+          <p>I wrote a Python non-equilibrium Green's function simulator for 2D and 3D silicon transistors and built a dataset of about 100 verified devices. Next come a Fourier neural operator that gives the solver a head start, and a graph network that handles new device shapes.</p>
+          <div class="stat"><b>~65×</b><span>smaller 3D NEGF problem after model reduction</span></div>
+        </article>
+        <article class="card">
+          <div class="top"><span class="label">Carrier transport</span><span class="pill dev">In progress</span></div>
+          <h3>Neural mobility modeling</h3>
+          <p>Coulomb scattering is the dominant mobility mechanism in modern FETs, and the most expensive to compute. I'm building a reference solver, validated against experimental and published data, as the benchmark for a neural replacement.</p>
+        </article>
+        <article class="card wide">
+          <div class="top"><span class="label">Reinforcement learning · numerical methods</span><span class="pill dev">Ongoing</span></div>
+          <h3>Reinforcement learning that makes a quantum electrostatic solver converge faster</h3>
+          <div class="rl">
+            <div class="rl-text">
+              <p>The conventional 1D Poisson–Schrödinger solver for a double-gate stack stays exactly as it is: the same Newton update for Poisson's equation, the same Schrödinger eigenproblem and carrier model, iterated to self-consistency. Reinforcement learning only sets the starting conditions that decide how quickly that loop converges.</p>
+              <ul class="knobs">
+                <li><b>Initial potential V(x).</b> A parametric profile with a linear drop across each oxide and a parabolic well in the channel, set by two numbers, so the loop starts close to the answer.</li>
+                <li><b>Graded mesh.</b> Fine near the oxide–silicon interfaces and coarser where the solution is flat. The finest spacing is pinned to the conventional one, so the inversion layer is never under-resolved.</li>
+              </ul>
+              <p>The agent sees the gate bias and channel thickness and makes one decision per solve, which makes it a contextual bandit trained with PPO (γ = 0). Its reward is the log of the work saved, but only when the solve passes an accuracy check against a tightly converged reference. Any inaccurate solve scores below every accurate one, so speed is never bought with accuracy.</p>
+              <p>To support graded meshes I rewrote the solver with a variable-spacing finite-volume Poisson scheme and a symmetrized Schrödinger operator. On a uniform mesh it reproduces the conventional code to about 10<sup>−10</sup> V.</p>
+              <div class="pivot">
+                <span class="label">Why I changed the approach</span>
+                <p>The project began as inverse design: find the channel thickness that produces a target on-current. Gate voltage dominates the inversion charge and thickness is a weak secondary effect, so many geometries matched the same current and the reward was flat and noisy. Instead of asking RL to invent a design the physics doesn't pin down, I now use it to help a trusted simulator run faster.</p>
+              </div>
+            </div>
+            <div class="rl-side">
+              <div class="tbl">
+                <table>
+                  <thead><tr><th scope="col"></th><th scope="col">Conv.</th><th scope="col">Heuristic</th><th scope="col">RL</th></tr></thead>
+                  <tbody>
+                    <tr><th scope="row">Accuracy check</th><td>18/18</td><td>18/18</td><td>18/18</td></tr>
+                    <tr><th scope="row">Mesh nodes</th><td>333</td><td>111</td><td>71</td></tr>
+                    <tr><th scope="row">Iterations</th><td>20.3</td><td>2.5</td><td>6.0</td></tr>
+                    <tr><th scope="row">Speedup</th><td>1×</td><td>9.5×</td><td class="hi">26.1×</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="tnote">Benchmark of 18 cases: gate bias 0.8–2.0 V, channels of 6, 12 and 20 nm, 2 nm oxides. Nodes and iterations are means; speedup is the geometric mean of wall time and reaches about 100× on individual 20 nm cases. The heuristic baseline (graded mesh plus a coarse pre-solve guess) cuts iterations the most, while the RL policy wins on time by choosing much leaner meshes. Training runs on a laptop CPU.</p>
+            </div>
+          </div>
+          <div class="stat"><b>26×</b><span>faster self-consistent solves on average, with the physics unchanged</span><span class="priv">Private repository · code on request</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PUBLICATIONS ============ -->
+  <section class="block" id="publications">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Publications</h2>
+        <p>Full list on <a href="https://scholar.google.com/citations?user=8dKXEyQAAAAJ" target="_blank" rel="noopener">Google Scholar</a>.</p>
+      </div>
+      <ol class="pubs">
+        <li>
+          <span class="yr">2026</span>
+          <div>
+            <div class="ttl">Real Time Simulations of Advanced MOSFETs</div>
+            <div class="auth"><b>A. K. Singh</b>, S. P. Sreejan, A. Ashai, C. Medina-Bailón, J. Lee, V. Georgiev, B. Sarkar, O. Badami</div>
+            <div class="venue">Presented at EUROSOI-ULIS 2026 · under review at Solid-State Electronics</div>
+            <div class="row"><span class="pill rev">Preprint</span><a href="https://doi.org/10.2139/ssrn.7398600" target="_blank" rel="noopener">SSRN preprint</a><span>Measured I<sub>D</sub>–V<sub>G</sub> of nanosheet FETs reproduced in <span class="num-i">0.35 s</span>, with <span class="num-i">72%</span> less training data.</span></div>
+          </div>
+        </li>
+        <li>
+          <span class="yr">2025</span>
+          <div>
+            <div class="ttl">Real Time Electrostatics of Double Gate FETs With Neural Networks</div>
+            <div class="auth"><b>A. K. Singh</b>, A. Ashai, B. Sarkar, O. Badami</div>
+            <div class="venue">Advanced Theory and Simulations (Wiley), vol. 8, no. 11, e00686</div>
+            <div class="row"><span class="pill pub">Journal</span><a href="https://doi.org/10.1002/adts.202500686" target="_blank" rel="noopener">doi:10.1002/adts.202500686</a><span>Schrödinger–Poisson in <span class="num-i">~4 ms</span> instead of <span class="num-i">~27 s</span> per bias point.</span></div>
+          </div>
+        </li>
+        <li>
+          <span class="yr">2024</span>
+          <div>
+            <div class="ttl">Accurate and fast electrostatic simulation of double gate FETs using deep neural network</div>
+            <div class="auth"><b>A. K. Singh</b>, A. Ashai, P. S. K. Reddy, S. A. Dhaaipule, B. Sarkar, O. Badami</div>
+            <div class="venue">IEEE Electron Devices Technology and Manufacturing Conference (EDTM)</div>
+            <div class="row"><span class="pill pub">Conference</span><a href="https://doi.org/10.1109/EDTM58488.2024.10511954" target="_blank" rel="noopener">doi:10.1109/EDTM58488.2024.10511954</a></div>
+          </div>
+        </li>
+        <li>
+          <span class="yr">2026</span>
+          <div>
+            <div class="ttl">A method and a hardware platform for emulating an advanced semiconductor field-effect transistor (FET)</div>
+            <div class="auth"><b>A. K. Singh</b>, O. Badami</div>
+            <div class="row"><span class="pill rev">Patent application</span><span class="num-i">No. 202641121276</span></div>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ TALKS & WORKSHOPS ============ -->
+  <section class="block" id="talks">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Talks &amp; workshops</h2>
+      </div>
+      <div class="events">
+        <div class="ev-group">
+          <h3 class="label">Conference talks</h3>
+          <ul class="ev">
+            <li><span class="yr">2026</span><div><div class="ev-t">EUROSOI-ULIS 2026</div><div class="ev-p">Spain</div><p>Presented <i>Real Time Simulations of Advanced MOSFETs</i>.</p></div></li>
+            <li><span class="yr">2024</span><div><div class="ev-t">IEEE EDTM 2024</div><div class="ev-p">Bangalore, India</div><p>Presented our deep-learning electrostatic solver for double-gate FETs.</p></div></li>
+          </ul>
+        </div>
+        <div class="ev-group">
+          <h3 class="label">Workshops &amp; symposia</h3>
+          <ul class="ev">
+            <li><span class="yr">2026</span><div><div class="ev-t">Google DeepMind APAC Research Symposium</div><div class="ev-p">Selected participant</div></div></li>
+            <li><span class="yr">2026</span><div><div class="ev-t">Reinforcement Learning Workshop</div><div class="ev-p">IISc Bangalore · selected participant · sponsored by Walmart</div></div></li>
+            <li><span class="yr">2025</span><div><div class="ev-t">CASML</div><div class="ev-p">IISc Bangalore</div></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DEMOS & CODE ============ -->
+  <section class="block" id="demos">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Demos &amp; code</h2>
+        <p>Things you can open and use right now.</p>
+      </div>
+      <div class="grid2">
+        <article class="card">
+          <div class="top"><span class="label">Live app · LLM + neural solver</span></div>
+          <h3>Double-Gate MOS Analyzer</h3>
+          <p>Ask in plain English, for example "potential for a 12 nm channel at 0.3 V", and a language model sets the inputs for the neural network from my Wiley paper. It returns the potential across the silicon in about a millisecond and explains what the result means physically.</p>
+          <div class="links"><a href="https://mos-analyzer-pc9xqjekocovd2dfvg3fxc.streamlit.app/" target="_blank" rel="noopener">Open the app ↗</a></div>
+        </article>
+        <article class="card">
+          <div class="top"><span class="label">Live app · developer tool</span></div>
+          <h3>Codex Cartographer</h3>
+          <p>Upload a zipped codebase and get an interactive 2D/3D atlas: a line-by-line walkthrough beside a live dependency map. It reads Python, C/C++, MATLAB, Julia and more, and can attach the research paper the code implements.</p>
+          <div class="links"><a href="https://codex-cartographer.onrender.com/" target="_blank" rel="noopener">Open the app ↗</a><a href="https://github.com/avanish-singh/codex-cartographer" target="_blank" rel="noopener">Source</a></div>
+        </article>
+        <article class="card">
+          <div class="top"><span class="label">Code · solid-state physics</span></div>
+          <h3>Band structure of silicon</h3>
+          <p>The E–k relation of silicon across the first Brillouin zone, computed with the empirical pseudopotential method.</p>
+          <div class="links"><a href="https://github.com/avanish-singh/E-K-picture-of-1st-brillouin-zone-of-Si" target="_blank" rel="noopener">Source</a></div>
+        </article>
+        <article class="card">
+          <div class="top"><span class="label">Code · ML practice</span></div>
+          <h3>ML from scratch</h3>
+          <p>My solutions to TensorTonic's machine-learning coding problems, built up from the linear algebra.</p>
+          <div class="links"><a href="https://github.com/avanish-singh/TensorTonic-Solutions" target="_blank" rel="noopener">Solutions</a><a href="https://www.tensortonic.com/profile/avi_01071999" target="_blank" rel="noopener">TensorTonic profile</a></div>
+        </article>
+      </div>
+
+      <figure class="instrument" aria-labelledby="figTitle" style="margin-inline:0;margin-bottom:0">
+        <svg class="plot" id="plot" viewBox="0 0 480 290" role="img" aria-label="Conduction band edge and the first three electron subbands with their probability densities across a silicon film between two gate oxides.">
+          <defs>
+            <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="6" height="6" fill="var(--surface)"></rect>
+              <line x1="0" y1="0" x2="0" y2="6" stroke="var(--oxide)" stroke-width="2.4"></line>
+            </pattern>
+          </defs>
+          <g id="g"></g>
+        </svg>
+        <div class="side">
+          <span class="label">Try it here</span>
+          <h3 id="figTitle">Electrons in a double-gate film</h3>
+          <p>Move the sliders and this page re-solves the Schrödinger equation for the first three electron subbands. This eigen-solve, repeated inside the Poisson loop, is the step my networks replace.</p>
+          <div class="controls">
+            <div class="ctl">
+              <label for="tsi"><span>Film thickness T<sub>si</sub></span><output id="tsiOut">8.0 nm</output></label>
+              <input type="range" id="tsi" min="4" max="14" step="0.5" value="8">
+            </div>
+            <div class="ctl">
+              <label for="vg"><span>Gate bias V<sub>G</sub></span><output id="vgOut">0.45 V</output></label>
+              <input type="range" id="vg" min="0" max="0.6" step="0.01" value="0.45">
+            </div>
+          </div>
+          <div class="readout" id="readout" aria-live="polite"></div>
+          <figcaption class="caption">Finite differences on 160 nodes, m* = 0.916 m<sub>0</sub>, hard-wall oxide interfaces, simplified parabolic band bending, so the numbers are illustrative. On a thick film at high V<sub>G</sub>, E<sub>1</sub> and E<sub>2</sub> pair up as electrons split into two surface channels.</figcaption>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ CERTIFICATES ============ -->
+  <section class="block" id="certificates">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Certificates</h2>
+        <p>Click a name to open the certificate.</p>
+      </div>
+      <!-- To add a certificate: put its image in certs/ and copy one <li>. Newest first. -->
+      <ul class="certlist">
+        <li><a href="certs/datacamp-intermediate-python.jpg" data-view target="_blank" rel="noopener">Intermediate Python</a><span class="iss">DataCamp</span><span class="d">Nov 2026</span></li>
+        <li><a href="certs/nasa-open-science.jpg" data-view target="_blank" rel="noopener">Open Science Essentials</a><span class="iss">NASA Science Mission Directorate</span><span class="d">Oct 2026</span></li>
+        <li><a href="certs/coursera-supervised-ml.jpg" data-view target="_blank" rel="noopener">Supervised Machine Learning: Regression and Classification</a><span class="iss">DeepLearning.AI · Stanford Online · <a class="vfy" href="https://coursera.org/verify/1IPKXSUDOB9S" target="_blank" rel="noopener">verify</a></span><span class="d">Nov 2025</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="block" id="contact">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Get in touch</h2>
+        <p>I'm always glad to talk about scientific machine learning, device simulation or collaborations.</p>
+      </div>
+      <div class="contact">
+        <div><span class="label">Email</span><p id="addr">ee22resch11004@iith.ac.in</p><button class="copy" id="copyBtn" type="button">Copy address</button></div>
+        <div><span class="label">Research</span><p><a href="https://scholar.google.com/citations?user=8dKXEyQAAAAJ" target="_blank" rel="noopener">Google Scholar</a></p></div>
+        <div><span class="label">Code</span><p><a href="https://github.com/avanish-singh" target="_blank" rel="noopener">github.com/avanish-singh</a><br><a href="https://www.tensortonic.com/profile/avi_01071999" target="_blank" rel="noopener">TensorTonic (ML coding)</a></p></div>
+        <div><span class="label">Lab</span><p>Dept. of Electrical Engineering, IIT Hyderabad, Kandi, Sangareddy, Telangana 502284</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Avanish Kumar Singh</span>
+    <span>Outside the lab: cosmology, hiking, basketball, guitar, swimming</span>
+    <span>Updated November 2026</span>
+  </div>
+</footer>
+
+<dialog class="viewer" id="viewer" aria-label="Certificate">
+  <img id="viewerImg" alt="">
+  <div class="bar"><span id="viewerCap"></span><button type="button" id="viewerClose">Close</button></div>
+</dialog>
+
+<script>
+(function () {
+  // ---- copy email ----
+  var btn = document.getElementById('copyBtn'), addr = document.getElementById('addr');
+  btn.addEventListener('click', function () {
+    var text = addr.textContent.trim();
+    var reset = function () { setTimeout(function () { btn.textContent = 'Copy address'; }, 1600); };
+    var fallback = function () {
+      var r = document.createRange(); r.selectNodeContents(addr);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = 'Selected, press Ctrl+C'; reset();
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { btn.textContent = 'Copied'; reset(); }, fallback);
+      else fallback();
+    } catch (e) { fallback(); }
+  });
+
+  // ---- certificate viewer ----
+  var dlg = document.getElementById('viewer'), vImg = document.getElementById('viewerImg'), vCap = document.getElementById('viewerCap');
+  document.querySelectorAll('a[data-view]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      if (!dlg.showModal) return; // no dialog support: let the link open the image
+      e.preventDefault();
+      vImg.src = a.getAttribute('href'); vImg.alt = a.textContent + ' certificate';
+      vCap.textContent = a.textContent;
+      dlg.showModal();
+    });
+  });
+  document.getElementById('viewerClose').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+
+  // ---- 1D Schrödinger solver (finite differences, tridiagonal) ----
+  var HB2M = 0.0380998; // hbar^2 / (2 m0) in eV nm^2
+  function solve(T, VG, nStates) {
+    var N = 160, dx = T / (N + 1), m = 0.916;
+    var t = HB2M / (m * dx * dx);
+    var delta = 0.3 * Math.pow(VG / 0.6, 1.5) * Math.pow(T / 14, 2); // illustrative band-bending depth, eV
+    var U = new Float64Array(N), d = new Float64Array(N), x = new Float64Array(N);
+    for (var i = 0; i < N; i++) {
+      x[i] = (i + 1) * dx;
+      var s = 2 * x[i] / T - 1;
+      U[i] = delta * (1 - s * s);
+      d[i] = 2 * t + U[i];
+    }
+    var t2 = t * t;
+    function count(lam) { // Sturm sequence: number of eigenvalues below lam
+      var c = 0, q = d[0] - lam;
+      if (q < 0) c++;
+      for (var i = 1; i < N; i++) {
+        q = d[i] - lam - t2 / (q === 0 ? 1e-300 : q);
+        if (q < 0) c++;
+      }
+      return c;
+    }
+    var E = [], psi = [];
+    for (var k = 0; k < nStates; k++) {
+      var lo = 0, hi = 4 * t + delta;
+      for (var it = 0; it < 70; it++) {
+        var mid = 0.5 * (lo + hi);
+        if (count(mid) > k) hi = mid; else lo = mid;
+      }
+      var e = 0.5 * (lo + hi);
+      E.push(e);
+      var sigma = e - 1e-9, v = new Float64Array(N);
+      for (i = 0; i < N; i++) v[i] = Math.sin((k + 1) * Math.PI * x[i] / T) + 1e-3;
+      var cp = new Float64Array(N), dp = new Float64Array(N);
+      for (var pass = 0; pass < 3; pass++) { // inverse iteration via Thomas algorithm
+        var b0 = d[0] - sigma;
+        cp[0] = -t / b0; dp[0] = v[0] / b0;
+        for (i = 1; i < N; i++) {
+          var den = (d[i] - sigma) + t * cp[i - 1];
+          cp[i] = -t / den; dp[i] = (v[i] + t * dp[i - 1]) / den;
+        }
+        v[N - 1] = dp[N - 1];
+        for (i = N - 2; i >= 0; i--) v[i] = dp[i] - cp[i] * v[i + 1];
+        var nrm = 0; for (i = 0; i < N; i++) nrm += v[i] * v[i];
+        nrm = Math.sqrt(nrm); for (i = 0; i < N; i++) v[i] /= nrm;
+      }
+      var p2 = new Float64Array(N); for (i = 0; i < N; i++) p2[i] = v[i] * v[i];
+      psi.push(p2);
+    }
+    return { x: x, U: U, E: E, psi: psi };
+  }
+
+  // ---- drawing ----
+  var NS = 'http://www.w3.org/2000/svg';
+  var g = document.getElementById('g');
+  var L = 54, R = 446, TOP = 16, BOT = 252, EMAX = 0.32, OX = 1.2;
+  var SUBS = '₁₂₃';
+  function el(name, attrs, text) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    g.appendChild(n); return n;
+  }
+  function draw(T, VG) {
+    var sol = solve(T, VG, 3);
+    while (g.firstChild) g.removeChild(g.firstChild);
+    var xmin = -OX, xmax = T + OX;
+    var X = function (v) { return L + (v - xmin) / (xmax - xmin) * (R - L); };
+    var Y = function (e) { return BOT - e / EMAX * (BOT - TOP); };
+    el('line', { x1: L, y1: BOT, x2: R, y2: BOT, class: 'axis' });
+    el('line', { x1: L, y1: TOP, x2: L, y2: BOT, class: 'axis' });
+    [0, 0.1, 0.2, 0.3].forEach(function (e) {
+      el('line', { x1: L - 4, y1: Y(e), x2: L, y2: Y(e), class: 'axis' });
+      el('text', { x: L - 8, y: Y(e) + 4, 'text-anchor': 'end' }, e.toFixed(1));
+    });
+    el('text', { x: 14, y: (TOP + BOT) / 2, transform: 'rotate(-90 14 ' + (TOP + BOT) / 2 + ')', 'text-anchor': 'middle' }, 'Energy (eV)');
+    el('text', { x: X(0), y: BOT + 16, 'text-anchor': 'middle' }, '0');
+    el('text', { x: X(T), y: BOT + 16, 'text-anchor': 'middle' }, T.toFixed(1));
+    el('text', { x: (X(0) + X(T)) / 2, y: BOT + 32, 'text-anchor': 'middle' }, 'x (nm)');
+    el('rect', { x: X(xmin), y: TOP, width: X(0) - X(xmin), height: BOT - TOP, class: 'ox' });
+    el('rect', { x: X(T), y: TOP, width: X(xmax) - X(T), height: BOT - TOP, class: 'ox' });
+    el('line', { x1: X(0), y1: TOP, x2: X(0), y2: BOT, class: 'oxedge' });
+    el('line', { x1: X(T), y1: TOP, x2: X(T), y2: BOT, class: 'oxedge' });
+    el('text', { x: (X(xmin) + X(0)) / 2, y: TOP + 14, 'text-anchor': 'middle' }, 'SiO₂');
+    el('text', { x: (X(T) + X(xmax)) / 2, y: TOP + 14, 'text-anchor': 'middle' }, 'SiO₂');
+    var dpath = 'M' + X(0) + ' ' + Y(0);
+    for (var i = 0; i < sol.x.length; i++) dpath += ' L' + X(sol.x[i]).toFixed(2) + ' ' + Y(sol.U[i]).toFixed(2);
+    dpath += ' L' + X(T) + ' ' + Y(0);
+    el('path', { d: dpath, class: 'band' });
+    var AMP = 40, cls = ['c1', 'c2', 'c3'], lastLabel = Infinity;
+    for (var k = 0; k < 3; k++) {
+      var e = sol.E[k]; if (e > EMAX * 0.98) continue;
+      var p = sol.psi[k], pm = 0;
+      for (i = 0; i < p.length; i++) if (p[i] > pm) pm = p[i];
+      var y0 = Y(e);
+      var path = 'M' + X(0) + ' ' + y0.toFixed(2);
+      for (i = 0; i < p.length; i++) path += ' L' + X(sol.x[i]).toFixed(2) + ' ' + (y0 - AMP * p[i] / pm).toFixed(2);
+      path += ' L' + X(T) + ' ' + y0.toFixed(2) + ' Z';
+      el('path', { d: path, class: 'wf ' + cls[k] });
+      el('line', { x1: X(0), y1: y0, x2: X(T), y2: y0, class: 'lvl ' + cls[k] });
+      var ly = Math.min(y0 + 4, lastLabel - 12); lastLabel = ly; // keep near-degenerate labels apart
+      el('text', { x: X(T) + 6, y: ly, class: 't' + (k + 1) }, 'E' + SUBS[k]);
+    }
+    var cols = ['var(--psi1)', 'var(--psi2)', 'var(--psi3)'], html = '';
+    for (k = 0; k < 3; k++) html += '<span><i style="background:' + cols[k] + '"></i>E' + SUBS[k] + ' = ' + (sol.E[k] * 1000).toFixed(1) + ' meV</span>';
+    html += '<span style="color:var(--muted)">E₂ − E₁ = ' + ((sol.E[1] - sol.E[0]) * 1000).toFixed(1) + ' meV</span>';
+    document.getElementById('readout').innerHTML = html;
+  }
+  var tsi = document.getElementById('tsi'), vg = document.getElementById('vg');
+  var tsiOut = document.getElementById('tsiOut'), vgOut = document.getElementById('vgOut');
+  function update() {
+    var T = parseFloat(tsi.value), V = parseFloat(vg.value);
+    tsiOut.textContent = T.toFixed(1) + ' nm';
+    vgOut.textContent = V.toFixed(2) + ' V';
+    draw(T, V);
+  }
+  tsi.addEventListener('input', update);
+  vg.addEventListener('input', update);
+  update();
+})();
+</script>
+</body>
+</html>
