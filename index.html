@@ -625,6 +625,12 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: s
           <h3>Neural mobility modeling</h3>
           <p>Coulomb scattering is the dominant mobility mechanism in modern FETs, and the most expensive to compute. I'm building a reference solver, validated against experimental and published data, as the benchmark for a neural replacement.</p>
         </article>
+        <article class="card">
+          <div class="top"><span class="label">Graph neural networks · TCAD</span><span class="pill dev">Ongoing</span></div>
+          <h3>Graph network for double-gate MOS electrostatics</h3>
+          <p>Each TCAD potential profile becomes a graph, one node per mesh point across the oxide–silicon–oxide stack, and an edge-aware message-passing network predicts the potential at every node. A Sobolev loss makes it match the field and curvature too. Training covers 464 profiles, 3–26 nm films at 0.6–1.2 V. Next I'm testing an edge-free baseline to see how much the message passing itself adds.</p>
+          <div class="stat"><b>1.46 mV</b><span>mean error on film thicknesses the network never saw</span><span class="priv">Private repository · code on request</span></div>
+        </article>
         <article class="card wide">
           <div class="top"><span class="label">Reinforcement learning · numerical methods</span><span class="pill dev">Ongoing</span></div>
           <h3>Reinforcement learning that makes a quantum electrostatic solver converge faster</h3>
