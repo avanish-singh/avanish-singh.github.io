@@ -628,7 +628,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: s
         <article class="card">
           <div class="top"><span class="label">Graph neural networks · TCAD</span><span class="pill dev">Ongoing</span></div>
           <h3>Graph network for double-gate MOS electrostatics</h3>
-          <p>Each TCAD potential profile becomes a graph, one node per mesh point across the oxide–silicon–oxide stack, and an edge-aware message-passing network predicts the potential at every node. A Sobolev loss makes it match the field and curvature too. Training covers 464 profiles, 3–26 nm films at 0.6–1.2 V. Next I'm testing an edge-free baseline to see how much the message passing itself adds.</p>
+          <p>Each TCAD potential profile becomes a graph, one node per mesh point across the oxide–silicon–oxide stack, and an edge-aware message-passing network predicts the potential at every node, matching the field and curvature through a Sobolev loss. Training covers 3–26 nm films from the OFF state (0.6 V) to the ON state (1.2 V). Each edge carries its own spacing, so no structured grid is needed: on randomly placed nodes the network never trained on, the error stays at 1.6 mV. An edge-free baseline is next.</p>
           <div class="stat"><b>1.46 mV</b><span>mean error on film thicknesses the network never saw</span><span class="priv">Private repository · code on request</span></div>
         </article>
         <article class="card wide">
@@ -777,6 +777,12 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: s
         <p>Things you can open and use right now.</p>
       </div>
       <div class="grid2">
+        <article class="card wide">
+          <div class="top"><span class="label">Live demo · graph neural network</span></div>
+          <h3>GNN potential explorer</h3>
+          <p>My trained graph network running in your browser. Pick a silicon thickness and a gate voltage between the OFF state (0.6 V) and the ON state (1.2 V), and it predicts the potential across the double-gate stack next to the TCAD solution. Swap the uniform training mesh for a graded or randomly placed one and it still holds, or step through the eight message-passing layers to watch the profile form.</p>
+          <div class="links"><a href="gnn-explorer/" target="_blank" rel="noopener">Open the explorer ↗</a></div>
+        </article>
         <article class="card">
           <div class="top"><span class="label">Live app · LLM + neural solver</span></div>
           <h3>Double-Gate MOS Analyzer</h3>

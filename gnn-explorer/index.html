@@ -1,0 +1,1378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GNN Potential Explorer · A. K. Singh</title>
+<meta name="description" content="A trained graph neural network predicting the electrostatic potential across a double-gate MOSFET, running live in the browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one instrument panel (the live simulator) up top, then a numbered walk through the pipeline,
+   prose beside its figure on wide screens, stacked on phones. Palette taken from the device itself:
+   brass gate, glassy oxide, slate silicon, indigo for the network's prediction. */
+:root {
+  --bg: #f1f4f5;
+  --surface: #ffffff;
+  --sunk: #e7ecee;
+  --ink: #111b23;
+  --ink-2: #33414c;
+  --muted: #5a6873;
+  --rule: #d2dade;
+  --accent: #3b4cca;
+  --accent-soft: rgba(59, 76, 202, 0.12);
+  --gate: #a8793c;
+  --oxide: #86c3ce;
+  --silicon: #7f8ca0;
+  --train: #8a97a4;
+  --val: #0e96a2;
+  --test: #d4470e;
+  --err: #d4470e;
+  --c-value: #0e96a2;
+  --c-grad: #b07418;
+  --c-curv: #d4470e;
+  --v06: #9aa7e6;
+  --v08: #6c7fdc;
+  --v10: #3b4cca;
+  --v12: #1d2575;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1317; --surface: #141c22; --sunk: #1a242b; --ink: #e3eaee; --ink-2: #c3ced5; --muted: #95a3ae; --rule: #28343d;
+    --accent: #8f9dff; --accent-soft: rgba(143, 157, 255, 0.16); --gate: #cf9f61; --oxide: #3d7d89; --silicon: #55647a;
+    --train: #7d8b98; --val: #2cc2ce; --test: #ff7a45; --err: #ff7a45; --c-value: #2cc2ce; --c-grad: #e2a744; --c-curv: #ff7a45;
+    --v06: #4a5590; --v08: #6a7be0; --v10: #9aa7ff; --v12: #d4daff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1317; --surface: #141c22; --sunk: #1a242b; --ink: #e3eaee; --ink-2: #c3ced5; --muted: #95a3ae; --rule: #28343d;
+  --accent: #8f9dff; --accent-soft: rgba(143, 157, 255, 0.16); --gate: #cf9f61; --oxide: #3d7d89; --silicon: #55647a;
+  --train: #7d8b98; --val: #2cc2ce; --test: #ff7a45; --err: #ff7a45; --c-value: #2cc2ce; --c-grad: #e2a744; --c-curv: #ff7a45;
+  --v06: #4a5590; --v08: #6a7be0; --v10: #9aa7ff; --v12: #d4daff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.005em; }
+h1 { font-size: clamp(32px, 4.6vw, 52px); line-height: 1.04; font-weight: 600; max-width: 21ch; }
+h2 { font-size: clamp(26px, 3vw, 34px); line-height: 1.1; font-weight: 600; }
+h3 { font-size: 20px; line-height: 1.25; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+code { background: var(--sunk); padding: 0.08em 0.35em; border-radius: 4px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- masthead ---------- */
+.masthead { padding-block: 44px 26px; display: grid; gap: 16px; }
+.masthead .lede { max-width: 66ch; color: var(--ink-2); font-size: 17.5px; }
+.stackline { display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.stackline span b { color: var(--ink); font-weight: 500; }
+
+/* ---------- simulator ---------- */
+.sim { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 18px 14px; display: grid; gap: 14px; }
+.controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 14px 28px; align-items: end; }
+.ctl { display: grid; gap: 4px; min-width: 0; }
+.ctl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ctl-head label { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+.ctl-head label small { font-family: var(--font-body); font-weight: 400; font-size: 13px; color: var(--muted); margin-left: 6px; }
+.ctl-val { font-family: var(--font-mono); font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--accent); }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; height: 22px; }
+.rangemap { position: relative; height: 14px; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+.rangemap .seg { position: absolute; top: 0; height: 3px; background: var(--accent); opacity: 0.45; border-radius: 2px; }
+.rangemap .dot { position: absolute; top: -2px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: var(--accent); opacity: 0.7; }
+.rangemap .cap { position: absolute; top: 4px; white-space: nowrap; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.btn { border: 1px solid var(--rule); background: var(--surface); border-radius: 7px; padding: 6px 11px; font-size: 13.5px; cursor: pointer; line-height: 1.2; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.primary:hover { color: var(--surface); filter: brightness(1.08); }
+.seg-toggle { display: inline-flex; border: 1px solid var(--rule); border-radius: 7px; overflow: hidden; }
+.seg-toggle button { border: 0; background: transparent; padding: 6px 10px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.seg-toggle button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.sim-body { display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 18px; }
+.sim-figs { min-width: 0; display: grid; gap: 4px; position: relative; }
+.figbox { width: 100%; min-width: 0; position: relative; }
+.figbox svg, .figbox canvas { display: block; }
+.status { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 3px 9px; border-radius: 999px; background: var(--sunk); color: var(--ink-2); white-space: nowrap; }
+.chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.chip.warn { background: color-mix(in srgb, var(--err) 14%, transparent); color: var(--err); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.legend .sw { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid var(--ink); vertical-align: middle; margin-right: 6px; }
+.legend .sw.pred { border-top: 2.5px dashed var(--accent); }
+.legend .sw.err { border-top: 6px solid var(--err); opacity: 0.45; }
+.lensbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-top: 6px; }
+.lensbar .layers { display: inline-flex; gap: 3px; flex-wrap: wrap; }
+.lensbar .layers button { min-width: 30px; padding: 4px 7px; border: 1px solid var(--rule); background: var(--surface); border-radius: 6px; font-family: var(--font-mono); font-size: 12px; cursor: pointer; color: var(--muted); }
+.lensbar .layers button[aria-pressed="true"] { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.lenscap { font-size: 12.5px; color: var(--muted); max-width: 70ch; }
+.figlabel { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.readouts { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.readouts dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; font-size: 13.5px; }
+.readouts dt { color: var(--muted); }
+.readouts dd { margin: 0; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+.readouts .group { border-top: 1px solid var(--rule); padding-top: 10px; display: grid; gap: 6px; }
+.readouts .group h4 { margin: 0; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.hoverinfo { font-size: 12.5px; color: var(--ink-2); min-height: 3.2em; font-family: var(--font-mono); line-height: 1.5; }
+.busy-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); opacity: 0; transition: opacity .2s; }
+.is-busy .busy-dot { opacity: 1; animation: pulse 0.8s ease-in-out infinite alternate; }
+@keyframes pulse { from { opacity: 0.25; } to { opacity: 1; } }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-mono); font-size: 13px; color: var(--muted); background: var(--surface); }
+.ready .loading { display: none; }
+
+/* ---------- sections ---------- */
+main { display: grid; gap: 0; }
+.sec { padding-block: 56px 8px; display: grid; gap: 22px; }
+.sec-head { display: grid; gap: 8px; max-width: 70ch; }
+.sec-head .eyebrow { color: var(--accent); }
+.two { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 32px; align-items: start; }
+.prose { display: grid; gap: 14px; max-width: 66ch; color: var(--ink-2); min-width: 0; }
+.prose strong { color: var(--ink); font-weight: 600; }
+.prose ul, .prose ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.eq { font-family: var(--font-mono); font-size: 14.5px; background: var(--sunk); border-radius: 8px; padding: 10px 14px; color: var(--ink); overflow-x: auto; white-space: nowrap; }
+.eq .c { color: var(--muted); }
+.fig { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.fig-cap { font-size: 13px; color: var(--muted); }
+.note { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; color: var(--ink-2); }
+.note b { color: var(--ink); }
+.atlas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.atlas-panel { display: grid; gap: 4px; min-width: 0; }
+.atlas-panel .ah { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.atlas-panel .ah b { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.atlas-panel .ah span { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.atlas-panel .cv { position: relative; cursor: crosshair; }
+.atlas-tip { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); min-height: 1.5em; }
+.splitkey { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.splitkey i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+/* features */
+.chainnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.feat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.feat-table td { padding: 3px 6px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.feat-table tr.grp td { border-bottom: 0; padding-top: 10px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.feat-table td.i { font-family: var(--font-mono); color: var(--muted); width: 24px; }
+.feat-table td.n { font-family: var(--font-mono); font-size: 12px; word-break: break-word; }
+.feat-table td.n small { display: block; font-family: var(--font-body); color: var(--muted); font-size: 11.5px; }
+.feat-table td.v { font-family: var(--font-mono); text-align: right; width: 70px; font-variant-numeric: tabular-nums; }
+.feat-table td.b { width: 34%; }
+.bar { position: relative; height: 8px; background: var(--sunk); border-radius: 4px; }
+.bar span { position: absolute; top: 0; bottom: 0; background: var(--accent); border-radius: 4px; }
+.bar.signed::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
+.feat-table tr.global td.v { color: var(--accent); }
+.tablewrap { overflow-x: auto; }
+
+/* architecture */
+.arch { display: flex; align-items: stretch; gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+.blk { flex: 1 1 0; min-width: 120px; background: var(--surface); border: 1px solid var(--rule); border-radius: 9px; padding: 10px 12px; display: grid; gap: 3px; align-content: start; }
+.blk b { font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+.blk span { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+.blk em { font-style: normal; font-size: 11.5px; color: var(--muted); }
+.blk.conv { flex-grow: 1.6; border-color: var(--accent); background: var(--accent-soft); }
+.arr { align-self: center; color: var(--muted); font-family: var(--font-mono); }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; counter-reset: st; }
+.step { background: var(--surface); border: 1px solid var(--rule); border-radius: 9px; padding: 12px 14px; display: grid; gap: 6px; align-content: start; }
+.step h3 { font-size: 17px; }
+.step h3::before { counter-increment: st; content: counter(st) " · "; color: var(--accent); }
+.step p { font-size: 14px; color: var(--ink-2); }
+.step .mono { color: var(--ink); }
+
+/* tiles */
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 9px; padding: 12px 14px; display: grid; gap: 2px; }
+.tile .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.tile .k i { width: 8px; height: 8px; border-radius: 50%; }
+.tile .v { font-family: var(--font-display); font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 12.5px; color: var(--muted); }
+
+/* findings */
+.finding { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 28px; padding-block: 26px; border-top: 1px solid var(--rule); align-items: start; }
+.finding:first-of-type { border-top: 0; }
+.finding.solo { grid-template-columns: minmax(0, 1fr); }
+.finding .prose { max-width: 64ch; }
+.tag { display: inline-block; justify-self: start; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; background: var(--sunk); color: var(--muted); }
+.tag.hi { background: color-mix(in srgb, var(--err) 14%, transparent); color: var(--err); }
+.tag.mid { background: var(--accent-soft); color: var(--accent); }
+table.gv { border-collapse: collapse; width: 100%; font-size: 13px; font-family: var(--font-mono); }
+table.gv th, table.gv td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+table.gv th { font-family: var(--font-body); font-weight: 500; color: var(--muted); font-size: 12px; }
+table.gv td:first-child, table.gv th:first-child { text-align: left; }
+.ok { color: var(--val); } .bad { color: var(--err); }
+.smallnotes { display: grid; gap: 10px; color: var(--ink-2); font-size: 15px; max-width: 72ch; }
+.glossary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 22px; }
+.glossary div { display: grid; gap: 3px; font-size: 14px; color: var(--ink-2); }
+.glossary b { font-family: var(--font-display); font-size: 15.5px; color: var(--ink); font-weight: 600; }
+footer { padding-block: 40px 60px; color: var(--muted); font-size: 13px; display: grid; gap: 8px; border-top: 1px solid var(--rule); margin-top: 48px; }
+
+/* charts */
+.chart { display: block; font-family: var(--font-mono); overflow: visible; }
+.chart .grid { stroke: var(--rule); stroke-width: 1; shape-rendering: crispEdges; }
+.chart .axis { stroke: var(--muted); stroke-width: 1; shape-rendering: crispEdges; }
+.chart .tick { fill: var(--muted); font-size: 10.5px; }
+.chart .lab { fill: var(--muted); font-size: 11px; }
+.chart .lab-ink { fill: var(--ink-2); font-size: 11px; }
+.chart .rlab { fill: var(--ink-2); font-size: 11px; font-family: var(--font-body); }
+.chart .r-gate { fill: var(--gate); }
+.chart .r-ox { fill: var(--oxide); opacity: 0.34; }
+.chart .r-si { fill: var(--silicon); opacity: 0.13; }
+.chart .if-line { stroke: var(--silicon); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.9; }
+.chart .ln-truth { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.chart .ln-pred { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-dasharray: 7 4; stroke-linejoin: round; }
+.chart .ln-lens { fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linejoin: round; }
+.chart .ghost { opacity: 0.28; }
+.chart .err-area { fill: var(--err); opacity: 0.22; }
+.chart .err-line { fill: none; stroke: var(--err); stroke-width: 1.4; }
+.chart .cursor { stroke: var(--ink); stroke-width: 1; opacity: 0.45; }
+.chart .rf { fill: var(--accent); opacity: 0.16; }
+.chart .dot-t { fill: var(--ink); }
+.chart .dot-p { fill: var(--accent); }
+.chart .s-train { fill: var(--train); }
+.chart .s-val { fill: var(--val); }
+.chart .s-test { fill: var(--test); }
+.chart .l-train { stroke: var(--muted); fill: none; stroke-width: 1.4; }
+.chart .l-val { stroke: var(--accent); fill: none; stroke-width: 2; }
+.chart .c-value { stroke: var(--c-value); } .chart .c-grad { stroke: var(--c-grad); } .chart .c-curv { stroke: var(--c-curv); }
+.chart .thin { stroke-width: 1.2; fill: none; opacity: 0.75; stroke-dasharray: 3 3; }
+.chart .thick { stroke-width: 2; fill: none; }
+.chart .mark { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .lr { stroke: var(--c-grad); fill: none; stroke-width: 1.6; }
+.chart .pt { fill: var(--muted); opacity: 0.7; }
+.chart .pt.top { fill: var(--accent); opacity: 1; }
+.chart .range { fill: var(--accent-soft); }
+.chart .v06 { stroke: var(--v06); } .chart .v08 { stroke: var(--v08); } .chart .v10 { stroke: var(--v10); } .chart .v12 { stroke: var(--v12); }
+.chart .vline { fill: none; stroke-width: 2.2; }
+.chart .hl { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.chart .zero { stroke: var(--muted); stroke-width: 1; opacity: 0.6; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { border: 1px solid var(--rule); background: var(--surface); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.chips button i { width: 12px; height: 0; border-top: 2.5px solid currentColor; }
+.chips button[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-2); }
+.chips button[data-k="value"] i { border-color: var(--c-value); } .chips button[data-k="grad"] i { border-color: var(--c-grad); } .chips button[data-k="curv"] i { border-color: var(--c-curv); } .chips button[data-k="total"] i { border-color: var(--accent); }
+
+@media (max-width: 900px) {
+  .sim-body { grid-template-columns: minmax(0, 1fr); }
+  .two, .finding { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .glossary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+  .readouts .hover-group { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .controls { grid-template-columns: minmax(0, 1fr); }
+  .btnrow { justify-content: flex-start; }
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+  .atlas { grid-template-columns: minmax(0, 1fr); }
+  .glossary { grid-template-columns: minmax(0, 1fr); }
+  .readouts { grid-template-columns: minmax(0, 1fr); }
+  .arch { flex-direction: column; }
+  .arch .arr { transform: rotate(90deg); }
+  .blk { min-width: 0; }
+  .sim { padding: 14px 12px 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.backlink { justify-self: start; font-size: 14px; color: var(--muted); text-decoration: none; }
+.backlink:hover { color: var(--accent); }
+.mesh-ctl { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.ctl-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+.mesh-note { font-size: 13px; color: var(--muted); }
+.node-dot { fill: var(--accent); }
+.legend .sw-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: middle; }
+.mesh-res { margin-top: 28px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="masthead">
+    <a class="backlink" href="../">← Avanish Kumar Singh</a>
+    <div class="eyebrow">Graph neural network · trained checkpoint · running in your browser</div>
+    <h1>A graph network that predicts the potential inside a double-gate MOSFET</h1>
+    <p class="lede">This page runs my trained model live. Move the silicon thickness or the gate voltage, or switch to a mesh the network never trained on, and the browser builds the device's graph, sends it through all eight message-passing layers, and draws the predicted potential next to the TCAD solution. Below the simulator, each stage of the pipeline is explained in order.</p>
+    <div class="stackline">
+      <span><b>464</b> TCAD profiles</span><span><b>116</b> thicknesses × <b>4</b> gate voltages</span><span>OFF <b>0.6 V</b> · ON <b>1.2 V</b></span><span><b>469,633</b> weights</span><span>test error <b>1.46 mV</b> mean</span>
+    </div>
+  </header>
+
+  <section class="sim" id="sim" aria-label="Live simulator">
+    <div class="controls">
+      <div class="ctl">
+        <div class="ctl-head"><label for="tsi">Silicon thickness <small>T<sub>si</sub></small></label><span class="ctl-val" id="tsiVal">15.8 nm</span></div>
+        <input type="range" id="tsi" min="2" max="30" step="0.2" value="15.8">
+        <div class="rangemap" id="tsiMap"></div>
+      </div>
+      <div class="ctl">
+        <div class="ctl-head"><label for="vg">Gate voltage <small>V<sub>g</sub></small></label><span class="ctl-val" id="vgVal">1.20 V</span></div>
+        <input type="range" id="vg" min="0.5" max="1.3" step="0.05" value="1.2">
+        <div class="rangemap" id="vgMap"></div>
+      </div>
+      <div class="btnrow">
+        <div class="seg-toggle" role="group" aria-label="Potential axis">
+          <button type="button" id="yFit" aria-pressed="true">Zoom to profile</button>
+          <button type="button" id="yFix" aria-pressed="false">Fixed axis</button>
+        </div>
+        <button type="button" class="btn" id="randTest">Random test case</button>
+      </div>
+      <div class="ctl mesh-ctl">
+        <span class="ctl-name">Mesh</span>
+        <div class="seg-toggle" role="group" aria-label="Mesh">
+          <button type="button" data-mesh="uniform" aria-pressed="true">Uniform (training)</button>
+          <button type="button" data-mesh="graded" aria-pressed="false">Graded</button>
+          <button type="button" data-mesh="random" aria-pressed="false">Random points</button>
+        </div>
+        <span class="mesh-note" id="meshNote"></span>
+      </div>
+    </div>
+
+    <div class="sim-body">
+      <div class="sim-figs">
+        <div class="status">
+          <span class="busy-dot" aria-hidden="true"></span>
+          <span id="statusChips" class="status"></span>
+        </div>
+        <div class="figbox" id="simPlot" style="min-height:320px"><div class="loading">Loading the trained network (2.5 MB of weights)…</div></div>
+        <div class="figbox" id="simBand"></div>
+        <div class="figbox" id="simErr"></div>
+        <div class="legend"><span><span class="sw"></span>TCAD</span><span><span class="sw pred"></span>GNN prediction</span><span id="lgNodes" hidden><span class="sw-dot"></span>mesh nodes</span><span><span class="sw err"></span>|error|</span><span class="muted">Hover the plot to inspect a node. Dots under the voltage slider mark the four trained biases.</span></div>
+        <div class="lensbar">
+          <button type="button" class="btn primary" id="play">Play the layers</button>
+          <span class="layers" id="layerBtns" role="group" aria-label="Layer to read out"></span>
+        </div>
+        <p class="lenscap" id="lensCap"></p>
+        <div class="figlabel" id="heatLabel">Hidden state after layer 8 · 96 channels (rows) × every node (columns)</div>
+        <div class="figbox" id="simHeat"></div>
+      </div>
+      <aside class="readouts" aria-live="polite">
+        <div class="group">
+          <h4>This case</h4>
+          <dl id="roCase"></dl>
+        </div>
+        <div class="group">
+          <h4>Accuracy</h4>
+          <dl id="roAcc"></dl>
+        </div>
+        <div class="group hover-group">
+          <h4>Node under cursor</h4>
+          <div class="hoverinfo" id="hoverInfo">Point at the plot or the device strip.</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <main>
+    <!-- 1 -->
+    <section class="sec" id="s-data">
+      <div class="sec-head">
+        <div class="eyebrow">1 · The device and the data</div>
+        <h2>A silicon film between two gates, and Poisson's equation across it</h2>
+      </div>
+      <div class="two">
+        <div class="prose">
+          <p>The structure is a symmetric double-gate MOS stack: a silicon body of thickness T<sub>si</sub> between two 2 nm gate dielectrics, each covered by a gate held at the same voltage V<sub>g</sub>. Both sides are identical, so every profile is a mirror image about the body center.</p>
+          <p>For each device, TCAD solved Poisson's equation through the stack:</p>
+          <div class="eq">d/dy ( ε · dψ/dy ) = −ρ(y)</div>
+          <p>Three rules shape every curve on this page:</p>
+          <ul>
+            <li><strong>Dielectric: straight lines.</strong> There is no charge in the oxide, so ψ changes linearly.</li>
+            <li><strong>Interface: a kink.</strong> The displacement ε·dψ/dy is continuous, so the slope jumps where ε changes.</li>
+            <li><strong>Silicon: curvature is charge.</strong> ψ″ = −ρ/ε<sub>Si</sub>. Bend up means negative charge, bend down means positive.</li>
+          </ul>
+          <p><strong>OFF state: 0.6 V.</strong> Inside the silicon the curvature is 1.55 × 10⁻⁴ V/nm², exactly constant at 0.6 V and within about 10% at 0.8 V. Through Poisson's equation that is a fixed negative charge of 1.0 × 10¹⁷ cm⁻³: a p-type body that is fully depleted, holding ionized acceptors and no mobile carriers, so no channel conducts. The potential sags into a parabola whose depth grows with T<sub>si</sub>², from 0.17 mV in a 3 nm body to 13 mV in a 26 nm one.</p>
+          <p><strong>ON state: 1.2 V.</strong> The gate now pulls in an inversion layer of electrons, the conducting channel. The swing between surface and center grows to tens and then hundreds of millivolts, and the curvature stops being constant. At 1.0 V inversion is already forming; 0.8 V is still depleted.</p>
+          <p>The dataset is 116 thicknesses (3.0 to 26.0 nm in 0.2 nm steps) × 4 gate voltages = 464 profiles, sampled every 0.05 nm. The atlas shows all of them at once.</p>
+        </div>
+        <div class="fig">
+          <div class="atlas" id="atlas"></div>
+          <div class="atlas-tip" id="atlasTip">Hover a column for its thickness; click to load it in the simulator.</div>
+          <div class="splitkey"><span><i style="background:var(--train)"></i>train (81 thicknesses)</span><span><i style="background:var(--val)"></i>validation (17)</span><span><i style="background:var(--test)"></i>test (18)</span></div>
+          <p class="fig-cap">Each column is one TCAD file. Its height is the full stack, centered on the body; the dotted outline marks the silicon. Color is ψ, scaled separately for each gate voltage (range printed above each panel). The strip under each panel shows which split the thickness belongs to. All four voltages of a thickness share a split, so test thicknesses are never seen in training at any bias.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="sec" id="s-graph">
+      <div class="sec-head">
+        <div class="eyebrow">2 · Each file becomes a graph</div>
+        <h2>One mesh point is one node; neighbors are joined by two directed edges</h2>
+      </div>
+      <div class="two">
+        <div class="prose">
+          <p><code>graph_builder.py</code> turns one text file into one PyTorch Geometric graph:</p>
+          <ul>
+            <li><strong>File name → total thickness.</strong> <code>Potential_1.98e-08.txt</code> is 19.8 nm, so T<sub>si</sub> = 19.8 − 2 × 2 = 15.8 nm.</li>
+            <li><strong>Folder name → gate voltage.</strong> <code>Vg_1.2</code> → 1.2 V.</li>
+            <li><strong>Each line → one node</strong> at y = (i + ½) × 0.05 nm. The value on that line is the node's target, <code>data.y</code>.</li>
+            <li><strong>Neighbors → edges</strong> i→i+1 and i+1→i, so N nodes give 2(N−1) directed edges.</li>
+          </ul>
+          <p>The potential is never an input. A node is described by 16 numbers: where it is, which material it sits in, how far it is from each gate and interface, and which device it belongs to. Edges carry 3 numbers: the signed spacing (so a node can tell its upper neighbor from its lower one), the absolute spacing, and a flag for the one edge that crosses each dielectric/silicon interface.</p>
+          <div class="note"><b>Four of the 16 features are identical at every node of a graph:</b> T<sub>si</sub>, T<sub>ox</sub>, total thickness and V<sub>g</sub> (highlighted in the table). They are how a node deep inside the silicon knows which device it is in. Section 3 shows why that matters more than the edges do.</div>
+          <p><strong>No structured grid needed.</strong> Every device is its own graph, with as many nodes as its mesh has: 140 for the thinnest body, 600 for the thickest. Node features are physical positions and distances, and each edge carries its own spacing, so nothing ties the network to a fixed grid. The Mesh switch in the simulator runs the same trained network on graded and randomly placed nodes; section 6 has the numbers.</p>
+        </div>
+        <div class="fig">
+          <div class="chainnav">
+            <button type="button" class="btn" id="nPrev" aria-label="Previous node">◀</button>
+            <button type="button" class="btn" id="nNext" aria-label="Next node">▶</button>
+            <span class="chips" id="nJumps"></span>
+          </div>
+          <div class="figbox" id="chain"></div>
+          <div class="tablewrap"><table class="feat-table" id="featTable"></table></div>
+          <p class="fig-cap" id="edgeCap"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="sec" id="s-net">
+      <div class="sec-head">
+        <div class="eyebrow">3 · The network</div>
+        <h2>An encoder, eight edge-aware message-passing layers, and a decoder</h2>
+        <p class="muted">This is <code>MOS1DGNN</code> from <code>model.py</code> with the sizes Optuna chose: hidden width 96, eight layers, 469,633 trainable weights.</p>
+      </div>
+      <div class="arch" aria-label="Model architecture">
+        <div class="blk"><b>16 features</b><span>per node</span><em>position, material, distances, device</em></div>
+        <div class="arr">→</div>
+        <div class="blk"><b>Encoder</b><span>16 → 96 → 96</span><em>10,944 weights</em></div>
+        <div class="arr">→</div>
+        <div class="blk conv"><b>EdgeAwareConv × 8</b><span>message · mean · update · residual · LayerNorm</span><em>56,160 weights per layer, 449,280 in all</em></div>
+        <div class="arr">→</div>
+        <div class="blk"><b>Decoder</b><span>96 → 96 → 1</span><em>9,409 weights</em></div>
+        <div class="arr">→</div>
+        <div class="blk"><b>ψ̂ · σ + μ</b><span>σ = 0.167 V</span><em>μ = −0.130 V, from the train split</em></div>
+      </div>
+      <div class="steps">
+        <div class="step"><h3>Message</h3><p>For each incoming edge j→i, an MLP reads <span class="mono">[hᵢ, hⱼ, eᵢⱼ]</span>: 96 + 96 + 3 = 195 numbers. It returns a 96-number message. Because <span class="mono">eᵢⱼ</span> holds the signed spacing, messages from above and below are distinguishable.</p></div>
+        <div class="step"><h3>Aggregate</h3><p>The incoming messages are averaged. Interior nodes have two (one from each neighbor); the first and last nodes, which touch the gates, have one.</p></div>
+        <div class="step"><h3>Update</h3><p>A second MLP reads <span class="mono">[hᵢ, mean message]</span>. Its output is added back to <span class="mono">hᵢ</span> (a residual connection) and LayerNorm rescales the sum. The result is the node's state for the next layer.</p></div>
+      </div>
+      <div class="two">
+        <div class="prose">
+          <h3>How far does information travel?</h3>
+          <p>Each layer moves information one edge, 0.05 nm. Eight layers reach <strong>8 nodes, or 0.40 nm</strong>, in each direction. For the device in the simulator, the body center is <strong id="rfHops">—</strong> from either gate.</p>
+          <p>So message passing alone cannot tell the center of the silicon what the gates are doing, yet the model predicts the center potential well. The global information comes from the node features: every node is handed its normalized position, its distances to both gates and both interfaces, and the device's T<sub>si</sub> and V<sub>g</sub>. In practice the network behaves like a per-node regression on those coordinates, with the eight layers adding local smoothing and helping at the interface kinks. It is also why the network carries over to meshes it never trained on.</p>
+          <p>The <strong>Play the layers</strong> button in the simulator shows this. It applies the decoder to the hidden state after each layer. At layer 0 every node reads out close to the dataset mean; the profile takes shape over the next layers, mostly from the features rather than from neighbors far away.</p>
+        </div>
+        <div class="fig">
+          <div class="figbox" id="rfFig"></div>
+          <p class="fig-cap" id="rfCap">The current device drawn to scale. The highlighted sliver is everything the center node can hear from after eight layers.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="sec" id="s-loss">
+      <div class="sec-head">
+        <div class="eyebrow">4 · The loss</div>
+        <h2>Match the value, the slope and the curvature</h2>
+      </div>
+      <div class="two">
+        <div class="prose">
+          <p><code>losses.py</code> trains with a Sobolev loss. Each term is a SmoothL1 penalty, computed on normalized potential (ψ − μ)/σ and normalized position y/T:</p>
+          <div class="eq">L = ℓ(ψ̂, ψ) + λ<sub>g</sub>·ℓ(ψ̂′, ψ′) + λ<sub>c</sub>·ℓ(ψ̂″, ψ″)</div>
+          <p>Optuna set <strong>λ<sub>g</sub> = 0.0555</strong> and <strong>λ<sub>c</sub> = 0.00104</strong>. Derivatives are finite differences along each chain, never across two graphs in a batch.</p>
+          <p>In device terms the three targets are the potential, the electric field (E = −dψ/dy) and, through Poisson's equation, the charge density (ρ = −ε<sub>Si</sub>·ψ″). The charts follow the simulator, in physical units.</p>
+          <ul>
+            <li><strong>Field.</strong> Flat in each dielectric, a jump at each interface, then a smooth decay to zero at the body center, where symmetry forces it.</li>
+            <li><strong>Charge.</strong> At 0.6 V the TCAD curve is a flat −1.0 × 10¹⁷ cm⁻³ (the depleted acceptors). At 1.2 V in thin bodies the charge peaks at the center rather than at the interfaces, the signature of volume inversion. The 1.0 V and 1.2 V files store six decimals, which shows up as speckle in this chart.</li>
+          </ul>
+          <p>MAPE is deliberately left out of training because ψ crosses zero; it is reported only for points where |ψ| ≥ 5 mV.</p>
+        </div>
+        <div class="fig">
+          <div class="figlabel">Potential ψ (V)</div>
+          <div class="figbox" id="dPsi"></div>
+          <div class="figlabel">Electric field E = −dψ/dy (MV/cm)</div>
+          <div class="figbox" id="dE"></div>
+          <div class="figlabel" id="dRhoLab">Net charge density ρ/q in the silicon (cm⁻³)</div>
+          <div class="figbox" id="dRho"></div>
+          <div class="legend"><span><span class="sw"></span>TCAD</span><span><span class="sw pred"></span>GNN</span><span class="muted" id="dCase"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="sec" id="s-train">
+      <div class="sec-head">
+        <div class="eyebrow">5 · Training</div>
+        <h2>A 30-trial Optuna search, then 656 epochs with the winner</h2>
+      </div>
+      <div class="two">
+        <div class="prose">
+          <p><code>train_full.py</code> ran two stages on the workstation. Optuna's TPE sampler tried 30 configurations for up to 50 epochs each and kept the one with the lowest validation loss, trial 11. Full training then used those settings: Adam at 8.7 × 10⁻⁴, batch size 8, weight decay 9.3 × 10⁻⁴.</p>
+          <p>ReduceLROnPlateau multiplied the learning rate by 0.63 whenever validation loss stalled for 16 epochs. The best validation loss came at <strong>epoch 556</strong>, which is the checkpoint running on this page. Early stopping ended the run at <strong>epoch 656</strong>, after 100 epochs without improvement, with the learning rate at its floor of 10⁻⁶.</p>
+          <p>The components tell different stories. The value loss falls about 4,400× (0.47 → 0.00011) and the slope loss about 260×. The curvature loss falls only 25× and levels off near 1.6 (train) and 2.0 (validation).</p>
+          <p>Across the Optuna trials, every one of the six best runs sits at the very bottom of the λ<sub>c</sub> search range (0.001 to 0.05). The search was asking for less curvature weight than it was allowed to give.</p>
+        </div>
+        <div class="fig">
+          <div class="chips" id="lossChips"></div>
+          <div class="figbox" id="lossFig"></div>
+          <div class="figlabel">Learning rate</div>
+          <div class="figbox" id="lrFig"></div>
+          <p class="fig-cap">Log scale. Thick lines are validation, dashed lines are training. Toggle the loss components above the chart.</p>
+        </div>
+      </div>
+      <div class="two">
+        <div class="prose">
+          <h3>Where the search ended up</h3>
+          <p>Each dot is one Optuna trial: its curvature weight λ<sub>c</sub> against the best validation loss it reached. Lower is better on both axes. The shaded band is the range Optuna was allowed to search.</p>
+          <p>Validation loss in the search is the total loss, so trials with different λ values are not measured on quite the same scale; the clustering at the lower bound is still a clear signal.</p>
+        </div>
+        <div class="fig">
+          <div class="figbox" id="optFig"></div>
+          <p class="fig-cap" id="optCap">Indigo: the six best trials. Labels give the trial number.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="sec" id="s-res">
+      <div class="sec-head">
+        <div class="eyebrow">6 · How well it does</div>
+        <h2>About 1.5 mV at every bias and thickness, and on meshes it never saw</h2>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <div class="two">
+        <div class="prose">
+          <p>Train, validation and test thicknesses all land at about 1.46 mV mean absolute error. There is no gap between thicknesses the network trained on and ones it never saw, so it interpolates in T<sub>si</sub> as well as it fits.</p>
+          <p>Relative to how much each profile varies, the picture depends on the bias. In the ON state (1.2 V) the error is under 1% of the profile's range (median 0.6%). In the OFF state (0.6 V) the whole profile varies by only 1 to 20 mV, so the same millivolt error is a much larger share of it: 24% of the range at the median. Capturing that low-bias shape more precisely is the next step.</p>
+          <p><button type="button" class="btn" data-go="5.4,0.6">Show Tsi 5.4 nm, 0.6 V</button> <button type="button" class="btn" data-go="18.4,1.2">Show Tsi 18.4 nm, 1.2 V</button></p>
+          <p class="muted">Both are test thicknesses. Use “Zoom to profile” to see the shape and “Fixed axis” to see it against the full potential range.</p>
+        </div>
+        <div class="fig">
+          <div class="seg-toggle" role="group" aria-label="Error measure">
+            <button type="button" id="eAbs" aria-pressed="true">Mean |error| (mV)</button>
+            <button type="button" id="eRel" aria-pressed="false">RMSE ÷ profile range</button>
+          </div>
+          <div class="figbox" id="errFig"></div>
+          <p class="fig-cap">One dot per TCAD file, colored by split, log scale.</p>
+        </div>
+      </div>
+      <div class="two mesh-res">
+        <div class="prose">
+          <h3>On meshes it never saw</h3>
+          <p>The network was trained only on the uniform 0.05 nm mesh. Here the same trained network runs on the 72 test cases (18 unseen thicknesses × 4 gate voltages) with its nodes placed differently, and each prediction is compared with the TCAD profile interpolated to those nodes. The error barely moves, even when the nodes are scattered at random with spacings from almost zero to 0.9 nm.</p>
+        </div>
+        <div class="fig">
+          <table class="gv">
+            <thead><tr><th>Mesh</th><th>Nodes per device</th><th>Mean |error|</th></tr></thead>
+            <tbody>
+              <tr><td>Uniform 0.05 nm (training)</td><td>334</td><td>1.46 mV</td></tr>
+              <tr><td>Uniform 0.2 nm (4× coarser)</td><td>84</td><td>1.50 mV</td></tr>
+              <tr><td>Jittered 0.1 nm, ±40%</td><td>167</td><td>1.49 mV</td></tr>
+              <tr><td>Graded, 0.02 nm at interfaces to 0.4 nm</td><td>75</td><td>1.60 mV</td></tr>
+              <tr><td>Random points</td><td>167</td><td>1.60 mV</td></tr>
+            </tbody>
+          </table>
+          <p class="fig-cap">Test split only, averaged over every node. Nodes per device is the average over the 72 cases.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="s-gloss">
+      <div class="sec-head">
+        <div class="eyebrow">Quick reference</div>
+        <h2>Terms used on this page</h2>
+      </div>
+      <div class="glossary">
+        <div><b>TCAD</b>Technology CAD: a numerical device simulator that solves Poisson's equation (and carrier transport) on a mesh. Here it supplied the ground truth.</div>
+        <div><b>Depletion</b>Mobile holes pushed out of a p-type body by the gate field, leaving fixed negative acceptor ions. Gives constant curvature.</div>
+        <div><b>Inversion</b>Enough gate voltage to pull a layer of electrons into a p-type body. The channel of a MOSFET.</div>
+        <div><b>Volume inversion</b>In very thin bodies, the inversion electrons spread through the whole film instead of sitting at the two surfaces.</div>
+        <div><b>OFF / ON state</b>Here 0.6 V, where the body is depleted and no channel conducts, and 1.2 V, where an inversion layer forms the channel.</div>
+        <div><b>Unstructured mesh</b>Nodes placed wherever the geometry needs them, at uneven spacing, instead of on a regular grid. A graph network takes either, because each edge carries its own spacing.</div>
+        <div><b>Message passing</b>Each layer, every node combines its own state with messages computed from its neighbors' states and the edge between them.</div>
+        <div><b>Receptive field</b>The set of nodes that can influence a node's output. For a chain and k layers it is k nodes on each side.</div>
+        <div><b>Sobolev loss</b>A loss that penalizes errors in derivatives as well as values, so the shape is matched, not only the level.</div>
+        <div><b>LayerNorm</b>Rescales each node's 96 numbers to zero mean and unit variance, then applies a learned scale and shift. Keeps deep stacks stable.</div>
+        <div><b>Split by thickness</b>All four voltages of a T<sub>si</sub> go to the same split, so held-out sets test genuinely unseen devices.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div><a href="../">Avanish Kumar Singh</a> · Ph.D. researcher, Electrical Engineering, IIT Hyderabad</div>
+    <div>The network on this page is a JavaScript port of the PyTorch model, loaded with the trained checkpoint's weights. It reproduces the PyTorch test-set predictions to within 1.4 × 10⁻⁷ V.</div>
+  </footer>
+</div>
+
+<script>
+'use strict';
+/* ====================== GNN forward pass (mirrors src/graph_builder.py + src/model.py) ====================== */
+function gnnFactory() {
+  const DY = 0.05, TOX = 2.0, EPS_OX = 3.9 / 11.7, H = 96;
+  function round6(v) { return Math.round(v * 1e6) / 1e6; }
+  function viewsFromBuffer(manifest, all) {
+    const W = {};
+    for (const k in manifest) { const off = manifest[k][0], shape = manifest[k][1]; const n = shape.reduce((a, b) => a * b, 1); W[k] = all.subarray(off, off + n); }
+    return W;
+  }
+  // node positions: the uniform training mesh, or a graded / random mesh the network never saw
+  function meshY(total, tsi, mesh, seed) {
+    const lo = DY / 2;
+    if (mesh === 'graded') {
+      const ifs = [TOX, TOX + tsi], y = []; let p = lo;
+      while (p < total - lo) { y.push(p); p += Math.min(0.4, 0.02 + 0.25 * Math.min(Math.abs(ifs[0] - p), Math.abs(ifs[1] - p))); }
+      return Float64Array.from(y);
+    }
+    if (mesh === 'random') {
+      let s = (seed >>> 0) || 1; const r = () => (s = (Math.imul(s, 1103515245) + 12345) >>> 0) / 4294967296;
+      const n = Math.round(total / 0.1), y = new Float64Array(n);
+      for (let i = 0; i < n; i++) y[i] = lo + r() * (total - 2 * lo);
+      return y.sort();
+    }
+    const n = Math.round(total / DY), y = new Float64Array(n);
+    for (let i = 0; i < n; i++) y[i] = (i + 0.5) * DY;
+    return y;
+  }
+  function buildGraph(tsiIn, vg, mesh, seed) {
+    const total = round6(tsiIn + 2 * TOX), tsi = round6(total - 2 * TOX);
+    const y = meshY(total, tsi, mesh, seed), n = y.length, region = new Int8Array(n), X = new Float64Array(n * 16);
+    const topIf = TOX, botIf = TOX + tsi;
+    for (let i = 0; i < n; i++) {
+      const yi = y[i];
+      const top = yi >= 0 && yi < TOX, semi = yi >= TOX && yi < TOX + tsi, bot = yi >= TOX + tsi && yi < total;
+      region[i] = semi ? 1 : (bot ? 2 : 0);
+      const dTop = Math.abs(yi - topIf), dBot = Math.abs(yi - botIf), near = Math.min(dTop, dBot), o = i * 16;
+      X[o] = yi / total; X[o + 1] = top ? 1 : 0; X[o + 2] = semi ? 1 : 0; X[o + 3] = bot ? 1 : 0; X[o + 4] = semi ? 1 : EPS_OX;
+      X[o + 5] = Math.abs(yi) / total; X[o + 6] = Math.abs(yi - total) / total; X[o + 7] = dTop / total; X[o + 8] = dBot / total;
+      X[o + 9] = (semi ? -near : near) / total; X[o + 10] = tsi / 26; X[o + 11] = TOX / 26; X[o + 12] = total / 30; X[o + 13] = vg / 1.2;
+      X[o + 14] = i === 0 ? 1 : 0; X[o + 15] = i === n - 1 ? 1 : 0;
+    }
+    const m = n - 1, E = 2 * m, src = new Int32Array(E), dst = new Int32Array(E), EA = new Float64Array(E * 3);
+    for (let i = 0; i < m; i++) {
+      const dyn = (y[i + 1] - y[i]) / total, flag = region[i] !== region[i + 1] ? 1 : 0, j = m + i;
+      src[i] = i; dst[i] = i + 1; EA[i * 3] = dyn; EA[i * 3 + 1] = Math.abs(dyn); EA[i * 3 + 2] = flag;
+      src[j] = i + 1; dst[j] = i; EA[j * 3] = -dyn; EA[j * 3 + 1] = Math.abs(dyn); EA[j * 3 + 2] = flag;
+    }
+    return { n, tsi, total, vg, y, region, X, src, dst, EA, E };
+  }
+  function linear(inp, n, inDim, Wt, b, outDim, colOff, rowLen, relu) {
+    const out = new Float64Array(n * outDim);
+    for (let r = 0; r < n; r++) {
+      const ib = r * inDim, ob = r * outDim;
+      for (let o = 0; o < outDim; o++) {
+        let s = b ? b[o] : 0; const wb = o * rowLen + colOff;
+        for (let k = 0; k < inDim; k++) s += inp[ib + k] * Wt[wb + k];
+        out[ob + o] = relu && s < 0 ? 0 : s;
+      }
+    }
+    return out;
+  }
+  function forward(W, g) {
+    const n = g.n;
+    let x = linear(linear(g.X, n, 16, W['node_encoder.0.weight'], W['node_encoder.0.bias'], H, 0, 16, true), n, H, W['node_encoder.2.weight'], W['node_encoder.2.bias'], H, 0, H, false);
+    const layers = [x];
+    const deg = new Float64Array(n); for (let e = 0; e < g.E; e++) deg[g.dst[e]] += 1;
+    for (let l = 0; W['convs.' + l + '.norm.weight']; l++) {
+      const p = 'convs.' + l + '.';
+      const W1 = W[p + 'message_mlp.0.weight'], b1 = W[p + 'message_mlp.0.bias'];
+      const A = linear(x, n, H, W1, null, H, 0, 195, false), B = linear(x, n, H, W1, null, H, H, 195, false);
+      const R = new Float64Array(n * H);
+      for (let e = 0; e < g.E; e++) {
+        const i = g.dst[e], j = g.src[e], e0 = g.EA[e * 3], e1 = g.EA[e * 3 + 1], e2 = g.EA[e * 3 + 2];
+        for (let o = 0; o < H; o++) { const wb = o * 195 + 2 * H; const s = A[i * H + o] + B[j * H + o] + b1[o] + W1[wb] * e0 + W1[wb + 1] * e1 + W1[wb + 2] * e2; if (s > 0) R[i * H + o] += s; }
+      }
+      for (let i = 0; i < n; i++) { const d = deg[i]; for (let o = 0; o < H; o++) R[i * H + o] /= d; }
+      const agg = linear(R, n, H, W[p + 'message_mlp.2.weight'], W[p + 'message_mlp.2.bias'], H, 0, H, false);
+      const cat = new Float64Array(n * 2 * H);
+      for (let i = 0; i < n; i++) { cat.set(x.subarray(i * H, i * H + H), i * 2 * H); cat.set(agg.subarray(i * H, i * H + H), i * 2 * H + H); }
+      const u = linear(cat, n, 2 * H, W[p + 'update_mlp.0.weight'], W[p + 'update_mlp.0.bias'], H, 0, 2 * H, true);
+      const out = linear(u, n, H, W[p + 'update_mlp.2.weight'], W[p + 'update_mlp.2.bias'], H, 0, H, false);
+      const gam = W[p + 'norm.weight'], bet = W[p + 'norm.bias'], xn = new Float64Array(n * H);
+      for (let i = 0; i < n; i++) {
+        let mu = 0; for (let o = 0; o < H; o++) mu += x[i * H + o] + out[i * H + o]; mu /= H;
+        let v = 0; for (let o = 0; o < H; o++) { const d = x[i * H + o] + out[i * H + o] - mu; v += d * d; }
+        const inv = 1 / Math.sqrt(v / H + 1e-5);
+        for (let o = 0; o < H; o++) xn[i * H + o] = (x[i * H + o] + out[i * H + o] - mu) * inv * gam[o] + bet[o];
+      }
+      x = xn; layers.push(x);
+    }
+    return layers;
+  }
+  function decode(W, x, n) {
+    return linear(linear(x, n, H, W['decoder.0.weight'], W['decoder.0.bias'], H, 0, H, true), n, H, W['decoder.2.weight'], W['decoder.2.bias'], 1, 0, H, false);
+  }
+  function run(W, tsi, vg, mean, std, mesh, seed) {
+    const g = buildGraph(tsi, vg, mesh, seed);
+    const layers = forward(W, g);
+    const lens = layers.map(x => { const d = decode(W, x, g.n); const v = new Float64Array(g.n); for (let i = 0; i < g.n; i++) v[i] = d[i] * std + mean; return v; });
+    return { lens, layers: layers.map(x => Float32Array.from(x)) };
+  }
+  return { buildGraph, forward, decode, run, viewsFromBuffer };
+}
+const GNN = gnnFactory();
+
+/* ====================== helpers ====================== */
+const $ = (s, r) => (r || document).querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(NS, tag);
+  if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function tok(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function lin(d0, d1, r0, r1) { const k = (r1 - r0) / ((d1 - d0) || 1); const f = v => r0 + (v - d0) * k; f.inv = p => d0 + (p - r0) / k; return f; }
+function logS(d0, d1, r0, r1) { const a = Math.log10(d0), k = (r1 - r0) / (Math.log10(d1) - a); return v => r0 + (Math.log10(Math.max(v, 1e-30)) - a) * k; }
+function nice(lo, hi, n) {
+  const span = (hi - lo) || 1, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / mag;
+  const step = (r > 5 ? 10 : r > 2 ? 5 : r > 1 ? 2 : 1) * mag, out = [];
+  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step) out.push(Math.abs(v) < step * 1e-6 ? 0 : v);
+  return { ticks: out, step };
+}
+function dec(step) { return Math.max(0, Math.ceil(-Math.log10(step) - 1e-9)); }
+function fmtNum(v, d) { const s = Math.abs(v).toFixed(d); return (v < 0 && +s !== 0 ? '−' : '') + s; }
+const SUP = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻' };
+function sup(n) { return String(n).split('').map(c => SUP[c] || c).join(''); }
+function makeSvg(box, w, h) { box.innerHTML = ''; const s = el('svg', { width: w, height: h, viewBox: '0 0 ' + w + ' ' + h, class: 'chart', role: 'img' }); box.appendChild(s); return s; }
+function txt(svg, x, y, s, cls, anchor, extra) { const a = Object.assign({ x, y, class: cls || 'tick' }, extra || {}); if (anchor) a['text-anchor'] = anchor; return el('text', a, svg, s); }
+function hexRGB(h) { h = h.trim(); if (h[0] === '#') { if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3]; const n = parseInt(h.slice(1, 7), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; } const m = h.match(/[\d.]+/g); return m ? m.slice(0, 3).map(Number) : [128, 128, 128]; }
+const SEQ = ['#2a1d69', '#3d55be', '#2898a8', '#79c68f', '#f0dc78'].map(hexRGB);
+function seq(t) { t = Math.min(1, Math.max(0, t)); const s = t * (SEQ.length - 1), i = Math.min(SEQ.length - 2, Math.floor(s)), f = s - i, a = SEQ[i], b = SEQ[i + 1]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]; }
+function rgb(c, a) { return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + (a == null ? 1 : a) + ')'; }
+function setupCanvas(box, w, h) {
+  box.innerHTML = ''; const c = document.createElement('canvas'); const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); c.style.width = w + 'px'; c.style.height = h + 'px';
+  box.appendChild(c); const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return { c, ctx };
+}
+function b64bytes(b64) { const bin = atob(b64), out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ====================== app state ====================== */
+const App = { D: null, meta: null, W: null, all: null, prof: null, cache: new Map(), cur: null, curU: null, worker: null, reqId: 0, inflight: false, pending: null };
+const SIM = { tsi: 15.8, vg: 1.2, mesh: 'uniform', seed: 1, yFit: true, layer: 8, hover: null, playing: false, tween: null, featNode: 40, errRel: false, flip: false, lossOn: { total: true, value: false, grad: false, curv: true } };
+const SPLIT_NAME = { t: 'train', v: 'validation', s: 'test' };
+const SPLIT_VAR = { t: '--train', v: '--val', s: '--test' };
+
+function gridIdx(tsi, vg) {
+  const D = App.D; const vi = D.vgs.findIndex(v => Math.abs(v - vg) < 1e-6); const ti = D.tsis.findIndex(t => Math.abs(t - tsi) < 1e-6);
+  return vi < 0 || ti < 0 ? null : { vi, ti };
+}
+function truthAt(vi, ti) { const D = App.D, n = Math.round((D.tsis[ti] + 4) / 0.05), o = D.offsets[vi][ti]; return App.prof.subarray(o, o + n); }
+function splitOf(tsi) { const D = App.D; const ti = D.tsis.findIndex(t => Math.abs(t - tsi) < 1e-6); return ti < 0 ? null : D.split[ti]; }
+function key(t, v, mesh, seed) { mesh = mesh || SIM.mesh; return t.toFixed(1) + '|' + v.toFixed(2) + '|' + mesh + (mesh === 'random' ? '|' + (seed == null ? SIM.seed : seed) : ''); }
+// TCAD value at position yq (nm), interpolated between the 0.05 nm samples
+function sampleTruth(a, yq) { const s = yq / 0.05 - 0.5, i = Math.min(a.length - 2, Math.max(0, Math.floor(s))), w = Math.min(1, Math.max(0, s - i)); return a[i] * (1 - w) + a[i + 1] * w; }
+// value of node array v at position yq, linear between nodes
+function valueAt(y, v, yq) { const n = y.length; if (yq <= y[0]) return v[0]; if (yq >= y[n - 1]) return v[n - 1]; let a = 0, b = n - 1; while (b - a > 1) { const m = (a + b) >> 1; if (y[m] <= yq) a = m; else b = m; } const w = (yq - y[a]) / ((y[b] - y[a]) || 1); return v[a] * (1 - w) + v[b] * w; }
+// the stretch of the stack each node stands for: halfway to its neighbors, out to the gates at the ends
+function cellEdges(g) { if (!g.edges) { const n = g.n, y = g.y, l = new Float64Array(n), r = new Float64Array(n); for (let i = 0; i < n; i++) { l[i] = i ? (y[i - 1] + y[i]) / 2 : 0; r[i] = i < n - 1 ? (y[i] + y[i + 1]) / 2 : g.total; } g.edges = [l, r]; } return g.edges; }
+function stateOf(vg) { return vg <= 0.65 ? 'OFF · depleted' : vg >= 1.15 ? 'ON · inversion' : 'OFF → ON'; }
+const MESH_LABEL = { uniform: 'uniform 0.05 nm (training)', graded: 'graded 0.02–0.4 nm', random: 'random points' };
+const MESH_NOTE = { uniform: 'The 0.05 nm grid the network was trained on.', graded: '0.02 nm at the interfaces, coarsening to 0.4 nm. Never seen in training.', random: 'About one node per 0.1 nm, placed at random. Never seen in training. Click again for a new draw.' };
+
+/* ====================== compute (worker with main-thread fallback) ====================== */
+function startWorker() {
+  try {
+    const src = 'const G = (' + gnnFactory.toString() + ')(); let W = null;\n' +
+      'onmessage = (e) => { const m = e.data; if (m.type === "init") { W = G.viewsFromBuffer(m.manifest, new Float32Array(m.buffer)); postMessage({ type: "ready" }); return; }\n' +
+      'const t0 = performance.now(); const r = G.run(W, m.tsi, m.vg, m.mean, m.std, m.mesh, m.seed); const ms = performance.now() - t0;\n' +
+      'postMessage({ type: "result", id: m.id, tsi: m.tsi, vg: m.vg, mesh: m.mesh, seed: m.seed, lens: r.lens, layers: r.layers, ms }, r.lens.map(a => a.buffer).concat(r.layers.map(a => a.buffer))); };';
+    const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    const w = new Worker(url);
+    w.onmessage = onWorker;
+    w.onerror = () => { App.worker = null; App.inflight = false; App.pending = null; request(SIM.tsi, SIM.vg); };
+    const copy = App.all.slice();
+    w.postMessage({ type: 'init', manifest: App.meta.manifest, buffer: copy.buffer }, [copy.buffer]);
+    App.worker = w;
+  } catch (err) { App.worker = null; }
+}
+function onWorker(e) {
+  const m = e.data; if (m.type !== 'result') return;
+  App.inflight = false;
+  const c = storeCase(m.tsi, m.vg, m.mesh, m.seed, m.lens, m.layers, m.ms);
+  if (App.pending) { const p = App.pending; App.pending = null; request(p.tsi, p.vg); return; }
+  if (key(m.tsi, m.vg, m.mesh, m.seed) === key(SIM.tsi, SIM.vg)) applyCase(c);
+}
+function storeCase(tsi, vg, mesh, seed, lens, layers, ms) {
+  const g = GNN.buildGraph(tsi, vg, mesh, seed); const gi = gridIdx(tsi, vg);
+  const truthFull = gi ? truthAt(gi.vi, gi.ti) : null;
+  const truth = truthFull && mesh !== 'uniform' ? Float64Array.from(g.y, yq => sampleTruth(truthFull, yq)) : truthFull;
+  const c = { tsi, vg, mesh, seed, g, lens, pred: lens[lens.length - 1], layers, truth, truthFull, gi, ms };
+  App.cache.set(key(tsi, vg, mesh, seed), c); if (App.cache.size > 10) App.cache.delete(App.cache.keys().next().value);
+  return c;
+}
+function request(tsi, vg) {
+  const k = key(tsi, vg);
+  if (App.cache.has(k)) { const c = App.cache.get(k); App.cache.delete(k); App.cache.set(k, c); applyCase(c); return; }
+  document.getElementById('sim').classList.add('is-busy');
+  if (App.worker) {
+    if (App.inflight) { App.pending = { tsi, vg }; return; }
+    App.inflight = true;
+    App.worker.postMessage({ type: 'run', id: ++App.reqId, tsi, vg, mesh: SIM.mesh, seed: SIM.seed, mean: App.meta.y_mean, std: App.meta.y_std });
+  } else {
+    const mesh = SIM.mesh, seed = SIM.seed;
+    setTimeout(() => {
+      const t0 = performance.now(); const r = GNN.run(App.W, tsi, vg, App.meta.y_mean, App.meta.y_std, mesh, seed);
+      const c = storeCase(tsi, vg, mesh, seed, r.lens, r.layers, performance.now() - t0);
+      if (key(tsi, vg, mesh, seed) === key(SIM.tsi, SIM.vg)) applyCase(c);
+    }, 20);
+  }
+}
+function applyCase(c) {
+  document.getElementById('sim').classList.remove('is-busy');
+  App.cur = c; SIM.tween = null;
+  if (SIM.hover != null && SIM.hover >= c.g.n) SIM.hover = null;
+  renderSim(); renderHeat(); renderReadouts(); markAtlas();
+  if (c.mesh === 'uniform') { // sections 2-4 describe the training setup, so they follow the uniform-mesh case
+    App.curU = c;
+    if (SIM.featNode >= c.g.n) SIM.featNode = Math.min(40, c.g.n - 1);
+    renderChain(); renderRF(); renderDerivs();
+  }
+}
+
+/* ====================== simulator ====================== */
+function simDomain(c) {
+  if (!SIM.yFit) return [-0.42, 0.14];
+  let lo = Infinity, hi = -Infinity; const scan = a => { for (let i = 0; i < a.length; i++) { if (a[i] < lo) lo = a[i]; if (a[i] > hi) hi = a[i]; } };
+  scan(c.pred); if (c.truthFull) scan(c.truthFull);
+  const span = Math.max(hi - lo, 0.0006), mid = (hi + lo) / 2; return [mid - span * 0.58, mid + span * 0.58];
+}
+function simGeom(box) {
+  const W = Math.max(280, box.clientWidth); const narrow = W < 560;
+  return { W, narrow, m: { l: narrow ? 50 : 62, r: 12, t: 30, b: 34 }, H: narrow ? 250 : 320 };
+}
+function regionsInto(svg, xs, half, y0, y1, labels) {
+  const gw = 7;
+  el('rect', { x: xs(-half) - gw, y: y0, width: gw, height: y1 - y0, class: 'r-gate' }, svg);
+  el('rect', { x: xs(half), y: y0, width: gw, height: y1 - y0, class: 'r-gate' }, svg);
+  el('rect', { x: xs(-half), y: y0, width: xs(-half + 2) - xs(-half), height: y1 - y0, class: 'r-ox' }, svg);
+  el('rect', { x: xs(half - 2), y: y0, width: xs(half) - xs(half - 2), height: y1 - y0, class: 'r-ox' }, svg);
+  el('rect', { x: xs(-half + 2), y: y0, width: xs(half - 2) - xs(-half + 2), height: y1 - y0, class: 'r-si' }, svg);
+  if (labels) {
+    const oxW = xs(-half + 2) - xs(-half);
+    txt(svg, xs(-half) - gw / 2, y0 - 8, 'gate', 'rlab', 'middle');
+    txt(svg, xs(half) + gw / 2, y0 - 8, 'gate', 'rlab', 'middle');
+    if (oxW > 34) { txt(svg, (xs(-half) + xs(-half + 2)) / 2, y0 - 8, 'oxide', 'rlab', 'middle'); txt(svg, (xs(half) + xs(half - 2)) / 2, y0 - 8, 'oxide', 'rlab', 'middle'); }
+    txt(svg, xs(0), y0 - 8, 'silicon · ' + (2 * half - 4).toFixed(1) + ' nm', 'rlab', 'middle');
+  }
+}
+function renderSim() {
+  const c = App.cur; if (!c) return;
+  const box = $('#simPlot'); box.style.minHeight = '';
+  const G = simGeom(box), W = G.W, H = G.H, m = G.m;
+  const svg = makeSvg(box, W, H);
+  const n = c.g.n, half = c.g.total / 2;
+  const xs = lin(-17, 17, m.l, W - m.r);
+  const [lo, hi] = simDomain(c); const ys = lin(lo, hi, H - m.b, m.t);
+  App.simScale = { xs, ys, half, n, m, W, H };
+  // grid + axes
+  const yt = nice(lo, hi, G.narrow ? 4 : 6), d = dec(yt.step);
+  for (const t of yt.ticks) { if (t < lo || t > hi) continue; el('line', { x1: m.l, x2: W - m.r, y1: ys(t), y2: ys(t), class: 'grid' }, svg); txt(svg, m.l - 6, ys(t) + 3.5, fmtNum(t, d), 'tick', 'end'); }
+  regionsInto(svg, xs, half, m.t, H - m.b, true);
+  for (let t = -15; t <= 15; t += 5) { txt(svg, xs(t), H - m.b + 15, String(t).replace('-', '−'), 'tick', 'middle'); el('line', { x1: xs(t), x2: xs(t), y1: H - m.b, y2: H - m.b + 4, class: 'axis' }, svg); }
+  el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axis' }, svg);
+  txt(svg, (m.l + W - m.r) / 2, H - 4, 'position from body center (nm)', 'lab', 'middle');
+  txt(svg, 12, (m.t + H - m.b) / 2, 'ψ (V)', 'lab', 'middle', { transform: 'rotate(-90 12 ' + ((m.t + H - m.b) / 2) + ')' });
+  const defs = el('defs', null, svg); const cp = el('clipPath', { id: 'simclip' }, defs); el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }, cp);
+  const g = el('g', { 'clip-path': 'url(#simclip)' }, svg);
+  const px = i => xs(c.g.y[i] - half);
+  const path = a => { let s = ''; for (let i = 0; i < n; i++) s += (i ? 'L' : 'M') + px(i).toFixed(1) + ' ' + ys(a[i]).toFixed(1); return s; };
+  const onMesh = c.mesh !== 'uniform';
+  if (c.truthFull) { // TCAD stays on its own 0.05 nm grid; on another mesh the GNN is drawn at its nodes
+    const t = c.truthFull; let d = ''; for (let i = 0; i < t.length; i++) d += (i ? 'L' : 'M') + xs((i + 0.5) * 0.05 - half).toFixed(1) + ' ' + ys(t[i]).toFixed(1);
+    el('path', { d, class: 'ln-truth' }, g);
+  }
+  const lensCurve = SIM.tween || (SIM.layer < 8 ? c.lens[SIM.layer] : null);
+  el('path', { d: path(c.pred), class: 'ln-pred' + (lensCurve ? ' ghost' : '') }, g);
+  if (onMesh) { const v = lensCurve || c.pred; for (let i = 0; i < n; i++) el('circle', { cx: px(i).toFixed(1), cy: ys(v[i]).toFixed(1), r: 2, class: 'node-dot' }, g); }
+  $('#lgNodes').hidden = !onMesh;
+  if (lensCurve) {
+    el('path', { d: path(lensCurve), class: 'ln-lens' }, g);
+    let off = 0; for (let i = 0; i < n; i += 7) { if (lensCurve[i] > hi) off = 1; else if (lensCurve[i] < lo) off = -1; }
+    if (off) txt(svg, W - m.r - 4, off > 0 ? m.t + 12 : H - m.b - 6, off > 0 ? 'read-out above this range ↑' : 'read-out below this range ↓', 'lab-ink', 'end');
+  }
+  App.hoverLayer = el('g', null, svg);
+  const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent' }, svg);
+  hit.addEventListener('pointermove', ev => { const r = svg.getBoundingClientRect(); setHover(nodeAtX(ev.clientX - r.left)); });
+  hit.addEventListener('pointerleave', () => setHover(null));
+  renderBand(); renderErr(); drawHover();
+}
+function nodeAtX(x) {
+  const s = App.simScale, c = App.cur; if (!s || !c) return null; const yv = s.xs.inv(x) + s.half, y = c.g.y, n = c.g.n;
+  if (yv < 0 || yv > c.g.total) return null;
+  let a = 0, b = n - 1; while (b - a > 1) { const m = (a + b) >> 1; if (y[m] <= yv) a = m; else b = m; }
+  return Math.abs(y[a] - yv) <= Math.abs(y[b] - yv) ? a : b;
+}
+function setHover(i) { SIM.hover = i; drawHover(); }
+function drawHover() {
+  const s = App.simScale, c = App.cur, gl = App.hoverLayer; if (!s || !c || !gl) return;
+  gl.innerHTML = ''; const info = $('#hoverInfo');
+  if (SIM.hover == null) { info.textContent = 'Point at the plot or the device strip.'; drawBandHover(); return; }
+  const i = SIM.hover, k = SIM.layer, x = s.xs(c.g.y[i] - s.half);
+  const a = Math.max(0, i - k), b = Math.min(c.g.n - 1, i + k);
+  const [L, R] = cellEdges(c.g);
+  el('rect', { x: s.xs(L[a] - s.half), y: s.m.t, width: Math.max(1.5, s.xs(R[b] - s.half) - s.xs(L[a] - s.half)), height: s.H - s.m.t - s.m.b, class: 'rf' }, gl);
+  el('line', { x1: x, x2: x, y1: s.m.t, y2: s.H - s.m.b, class: 'cursor' }, gl);
+  const cur = SIM.tween || c.lens[k];
+  if (c.truth) el('circle', { cx: x, cy: s.ys(c.truth[i]), r: 3.5, class: 'dot-t' }, gl);
+  el('circle', { cx: x, cy: s.ys(cur[i]), r: 3.5, class: 'dot-p' }, gl);
+  const reg = ['top oxide', 'silicon', 'bottom oxide'][c.g.region[i]];
+  let t = 'node ' + i + ' of ' + c.g.n + ' · y = ' + c.g.y[i].toFixed(3) + ' nm · ' + reg + '\n';
+  t += 'GNN ' + fmtNum(cur[i], 4) + ' V' + (c.truth ? '   TCAD ' + fmtNum(c.truth[i], 4) + ' V   Δ ' + fmtNum((cur[i] - c.truth[i]) * 1000, 2) + ' mV' : '') + '\n';
+  t += k === 0 ? 'after the encoder this node has only seen itself' : 'after layer ' + k + ' it depends on nodes ' + a + '–' + b + (c.mesh === 'uniform' ? ' (±' + (k * 0.05).toFixed(2) + ' nm)' : ' (' + (c.g.y[i] - c.g.y[a]).toFixed(2) + ' nm below, ' + (c.g.y[b] - c.g.y[i]).toFixed(2) + ' nm above)');
+  info.textContent = t; info.style.whiteSpace = 'pre-line';
+  drawBandHover();
+}
+function renderBand() {
+  const c = App.cur, s = App.simScale; if (!c || !s) return;
+  const box = $('#simBand'); const h = 34; const { c: cv, ctx } = setupCanvas(box, s.W, h);
+  App.band = { ctx, h, cv };
+  drawBandBase();
+  cv.addEventListener('pointermove', ev => { const r = cv.getBoundingClientRect(); setHover(nodeAtX(ev.clientX - r.left)); });
+  cv.addEventListener('pointerleave', () => setHover(null));
+  cv.setAttribute('aria-label', 'Device strip: one colored cell per graph node');
+}
+function drawBandBase() {
+  const c = App.cur, s = App.simScale, B = App.band; if (!c || !s || !B) return;
+  const ctx = B.ctx, h = B.h, half = s.half, xs = s.xs;
+  ctx.clearRect(0, 0, s.W, h);
+  ctx.fillStyle = tok('--gate'); ctx.fillRect(xs(-half) - 7, 4, 7, h - 8); ctx.fillRect(xs(half), 4, 7, h - 8);
+  ctx.fillStyle = rgb(hexRGB(tok('--oxide')), 0.45); ctx.fillRect(xs(-half), 4, xs(-half + 2) - xs(-half), h - 8); ctx.fillRect(xs(half - 2), 4, xs(half) - xs(half - 2), h - 8);
+  ctx.fillStyle = rgb(hexRGB(tok('--silicon')), 0.22); ctx.fillRect(xs(-half + 2), 4, xs(half - 2) - xs(-half + 2), h - 8);
+  const [lo, hi] = simDomain(c); const cur = SIM.tween || c.lens[SIM.layer];
+  const [L, R] = cellEdges(c.g);
+  for (let i = 0; i < c.g.n; i++) { const x0 = xs(L[i] - half), x1 = xs(R[i] - half); ctx.fillStyle = rgb(seq((cur[i] - lo) / (hi - lo))); ctx.fillRect(x0, 11, Math.max(0.8, x1 - x0 + 0.3), h - 22); }
+  ctx.strokeStyle = tok('--ink'); ctx.globalAlpha = 0.35; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(xs(-half), h / 2); ctx.lineTo(xs(half), h / 2); ctx.stroke(); ctx.globalAlpha = 1;
+}
+function drawBandHover() {
+  drawBandBase(); const c = App.cur, s = App.simScale, B = App.band; if (!c || !s || !B || SIM.hover == null) return;
+  const ctx = B.ctx, i = SIM.hover, k = SIM.layer, a = Math.max(0, i - k), b = Math.min(c.g.n - 1, i + k);
+  const [L, R] = cellEdges(c.g); const x0 = s.xs(L[a] - s.half), x1 = s.xs(R[b] - s.half);
+  ctx.strokeStyle = tok('--accent'); ctx.lineWidth = 2; ctx.strokeRect(x0 - 1, 7, Math.max(3, x1 - x0 + 2), B.h - 14);
+}
+function renderErr() {
+  const c = App.cur, s = App.simScale; if (!c || !s) return;
+  const box = $('#simErr'); const H = 70, m = s.m, W = s.W;
+  const svg = makeSvg(box, W, H);
+  if (!c.truth) { txt(svg, m.l, 26, 'No TCAD file at this thickness and voltage, so the prediction stands alone.', 'lab-ink'); txt(svg, m.l, 44, 'Files exist for every 0.2 nm from 3.0 to 26.0 nm at 0.6, 0.8, 1.0 and 1.2 V.', 'lab'); return; }
+  const n = c.g.n, half = s.half, xs = s.xs; let mx = 0; const e = new Float64Array(n);
+  const cur = SIM.tween || c.lens[SIM.layer];
+  for (let i = 0; i < n; i++) { e[i] = Math.abs(cur[i] - c.truth[i]) * 1000; if (e[i] > mx) mx = e[i]; }
+  const top = Math.max(0.5, mx * 1.12), ys = lin(0, top, H - 18, 6);
+  const tk = nice(0, top, 2); for (const t of tk.ticks) { if (t > top) continue; el('line', { x1: m.l, x2: W - m.r, y1: ys(t), y2: ys(t), class: 'grid' }, svg); txt(svg, m.l - 6, ys(t) + 3.5, t.toFixed(dec(tk.step)), 'tick', 'end'); }
+  let d = 'M' + xs(c.g.y[0] - half).toFixed(1) + ' ' + ys(0).toFixed(1), dl = '';
+  for (let i = 0; i < n; i++) { const x = xs(c.g.y[i] - half).toFixed(1), y = ys(e[i]).toFixed(1); d += 'L' + x + ' ' + y; dl += (i ? 'L' : 'M') + x + ' ' + y; }
+  d += 'L' + xs(c.g.y[n - 1] - half).toFixed(1) + ' ' + ys(0).toFixed(1) + 'Z';
+  el('path', { d, class: 'err-area' }, svg); el('path', { d: dl, class: 'err-line' }, svg);
+  txt(svg, 12, (H - 12) / 2, 'mV', 'lab', 'middle', { transform: 'rotate(-90 12 ' + ((H - 12) / 2) + ')' });
+  txt(svg, W - m.r, H - 4, '|prediction − TCAD|' + (SIM.layer < 8 && !SIM.tween ? ' at layer ' + SIM.layer : ''), 'lab', 'end');
+}
+function renderHeat() {
+  const c = App.cur, s = App.simScale; if (!c || !s) return;
+  const box = $('#simHeat'); const h = s.W < 560 ? 96 : 128; const { ctx } = setupCanvas(box, s.W, h);
+  const n = c.g.n, X = c.layers[SIM.layer];
+  // each channel (row) is centered and scaled across nodes, so the picture shows how it varies with position
+  const mu = new Float64Array(96), sd = new Float64Array(96);
+  for (let o = 0; o < 96; o++) { let s = 0, s2 = 0; for (let i = 0; i < n; i++) { const v = X[i * 96 + o]; s += v; s2 += v * v; } mu[o] = s / n; sd[o] = Math.sqrt(Math.max(s2 / n - mu[o] * mu[o], 0)); }
+  let sdMed = Array.from(sd).sort((a, b) => a - b)[48] || 1;
+  if (!c.order) { // display order fixed per case: rows sorted by how the final-layer channel tracks distance from the body center
+    const L8 = c.layers[8], half = c.g.total / 2, score = [];
+    for (let o = 0; o < 96; o++) { let m = 0, s = 0, s2 = 0, sxy = 0, sx = 0, sx2 = 0; for (let i = 0; i < n; i++) { const v = L8[i * 96 + o], x = Math.abs(c.g.y[i] - half); s += v; s2 += v * v; sxy += v * x; sx += x; sx2 += x * x; } const cov = sxy / n - (s / n) * (sx / n), vv = s2 / n - (s / n) ** 2, vx = sx2 / n - (sx / n) ** 2; score.push([o, cov / Math.sqrt(Math.max(vv * vx, 1e-12))]); }
+    c.order = score.sort((a, b) => a[1] - b[1]).map(p => p[0]);
+  }
+  const off = document.createElement('canvas'); off.width = n; off.height = 96; const octx = off.getContext('2d'); const img = octx.createImageData(n, 96);
+  const neg = hexRGB(tok('--accent')), pos = hexRGB(tok('--err')), mid = hexRGB(tok('--surface'));
+  for (let i = 0; i < n; i++) for (let r = 0; r < 96; r++) {
+    const o = c.order[r], scl = 2 * Math.max(sd[o], 0.05 * sdMed);
+    const v = Math.max(-1, Math.min(1, (X[i * 96 + o] - mu[o]) / scl)), cc = v < 0 ? neg : pos, t = Math.pow(Math.abs(v), 0.8), p = (r * n + i) * 4;
+    img.data[p] = mid[0] + (cc[0] - mid[0]) * t; img.data[p + 1] = mid[1] + (cc[1] - mid[1]) * t; img.data[p + 2] = mid[2] + (cc[2] - mid[2]) * t; img.data[p + 3] = 255;
+  }
+  octx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  const x0 = s.xs(-s.half), x1 = s.xs(s.half);
+  ctx.drawImage(off, x0, 0, x1 - x0, h);
+  ctx.fillStyle = tok('--muted'); ctx.font = '10.5px ' + tok('--font-mono');
+  ctx.textAlign = 'right'; ctx.fillText('96 ch', x0 - 6, 10);
+  $('#heatLabel').textContent = (SIM.layer === 0 ? 'Hidden state after the encoder' : 'Hidden state after layer ' + SIM.layer) + ' · 96 channels (rows) × ' + n + ' nodes (columns) · each row centered on its own mean: indigo below, vermilion above';
+}
+function renderReadouts() {
+  const c = App.cur; if (!c) return;
+  const D = App.D, sp = splitOf(c.tsi);
+  const inT = c.tsi >= 3 - 1e-9 && c.tsi <= 26 + 1e-9, inV = c.vg >= 0.6 - 1e-9 && c.vg <= 1.2 + 1e-9;
+  const chips = [];
+  if (c.truth) chips.push('<span class="chip"><i style="background:var(' + SPLIT_VAR[sp] + ')"></i>TCAD file · ' + SPLIT_NAME[sp] + ' thickness' + (sp === 't' ? '' : ', never trained on') + '</span>');
+  else if (!inT || !inV) chips.push('<span class="chip warn">Outside the training range: extrapolation</span>');
+  else chips.push('<span class="chip warn">Between trained voltages: no TCAD file here</span>');
+  if (sp && sp !== 't' && !c.truth) chips.push('<span class="chip"><i style="background:var(' + SPLIT_VAR[sp] + ')"></i>' + SPLIT_NAME[sp] + ' thickness</span>');
+  if (c.mesh !== 'uniform') chips.push('<span class="chip">' + c.mesh + ' mesh · never seen in training</span>');
+  chips.push('<span class="chip">forward pass ' + Math.round(c.ms) + ' ms</span>');
+  $('#statusChips').innerHTML = chips.join('');
+  const n = c.g.n, tot = c.g.total;
+  const fname = 'Vg_' + (Math.round(c.vg * 10) / 10).toFixed(1) + '/Potential_' + fmtFile(tot) + '.txt';
+  const rows = [
+    ['Folder', c.truth ? fname.split('/')[0] : 'none'],
+    ['File', c.truth ? fname.split('/')[1].replace('Potential_', '…') : 'none'],
+    ['Stack', '2 + ' + c.tsi.toFixed(1) + ' + 2 nm'],
+    ['State', stateOf(c.vg)],
+    ['Mesh', MESH_LABEL[c.mesh]],
+    ['Nodes', String(n)],
+    ['Directed edges', String(2 * (n - 1))],
+    ['ψ at the gates', fmtNum(c.truthFull ? c.truthFull[0] : c.pred[0], 4) + ' V'],
+    ['ψ at center, GNN', fmtNum(valueAt(c.g.y, c.pred, tot / 2), 4) + ' V'],
+  ];
+  if (c.truthFull) rows.push(['ψ at center, TCAD', fmtNum(sampleTruth(c.truthFull, tot / 2), 4) + ' V']);
+  $('#roCase').innerHTML = rows.map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
+  if (c.truth) {
+    let mae = 0, mx = 0, se = 0, tlo = Infinity, thi = -Infinity;
+    for (let i = 0; i < n; i++) { const e = c.pred[i] - c.truth[i]; mae += Math.abs(e); se += e * e; if (Math.abs(e) > mx) mx = Math.abs(e); if (c.truth[i] < tlo) tlo = c.truth[i]; if (c.truth[i] > thi) thi = c.truth[i]; }
+    mae /= n; const rmse = Math.sqrt(se / n), rng = thi - tlo;
+    $('#roAcc').innerHTML = [['Mean |error|', (mae * 1000).toFixed(2) + ' mV'], ['Max |error|', (mx * 1000).toFixed(2) + ' mV'], ['Profile range', (rng * 1000).toFixed(2) + ' mV'], ['RMSE ÷ range', (100 * rmse / rng).toFixed(1) + '%']].map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
+  } else {
+    let plo = Infinity, phi = -Infinity; for (let i = 0; i < n; i++) { plo = Math.min(plo, c.pred[i]); phi = Math.max(phi, c.pred[i]); }
+    $('#roAcc').innerHTML = '<dt>Predicted range</dt><dd>' + ((phi - plo) * 1000).toFixed(2) + ' mV</dd><dt>Error</dt><dd>no reference</dd>';
+  }
+}
+function fmtFile(totNm) { const m = totNm * 1e-9; let s = m.toExponential(4); s = s.replace(/(\.\d*?)0+e/, '$1e').replace('.e', 'e'); const [mant, ex] = s.split('e'); return mant + 'e' + (ex[0] === '-' ? '-' : '+') + ex.replace(/^[-+]/, '').padStart(2, '0'); }
+function renderLensUI() {
+  const box = $('#layerBtns'); box.innerHTML = '';
+  for (let k = 0; k <= 8; k++) { const b = document.createElement('button'); b.type = 'button'; b.textContent = k === 0 ? 'enc' : String(k); b.setAttribute('aria-pressed', String(k === SIM.layer)); b.setAttribute('aria-label', k === 0 ? 'Read out after the encoder' : 'Read out after layer ' + k); b.addEventListener('click', () => { stopPlay(); setLayer(k); }); box.appendChild(b); }
+  const k = SIM.layer;
+  $('#lensCap').textContent = k === 8 ? 'Layer 8 is the real prediction. Pick an earlier layer, or press Play, to apply the decoder to the hidden state partway through the network. The decoder was trained only on layer 8, so earlier read-outs are a probe of what the state already encodes.'
+    : (k === 0 ? 'Read-out right after the encoder: each node has seen only its own 16 features. The faded dashed line is the final prediction.' : 'Read-out after layer ' + k + ': each node has now heard from ' + k + ' neighbor' + (k > 1 ? 's' : '') + ' on each side' + (SIM.mesh === 'uniform' ? ' (±' + (k * 0.05).toFixed(2) + ' nm)' : '') + '. The faded dashed line is the final prediction.');
+}
+function setLayer(k) { SIM.layer = k; SIM.tween = null; renderLensUI(); renderSim(); renderHeat(); }
+function stopPlay() { SIM.playing = false; SIM.tween = null; $('#play').textContent = 'Play the layers'; }
+function play() {
+  if (SIM.playing) { stopPlay(); setLayer(SIM.layer); return; }
+  if (!App.cur) return;
+  SIM.playing = true; $('#play').textContent = 'Pause'; setLayer(0);
+  const step = () => {
+    if (!SIM.playing) return;
+    if (SIM.layer >= 8) { stopPlay(); renderLensUI(); return; }
+    const c = App.cur, from = c.lens[SIM.layer], to = c.lens[SIM.layer + 1], next = SIM.layer + 1;
+    if (reduceMotion) { setTimeout(() => { if (!SIM.playing) return; setLayer(next); setTimeout(step, 500); }, 300); return; }
+    const t0 = performance.now(), dur = 560, buf = new Float64Array(from.length);
+    const fr = now => {
+      if (!SIM.playing || App.cur !== c) return;
+      const t = Math.min(1, (now - t0) / dur), e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      for (let i = 0; i < buf.length; i++) buf[i] = from[i] + (to[i] - from[i]) * e;
+      SIM.tween = buf; renderSim();
+      if (t < 1) requestAnimationFrame(fr); else { SIM.tween = null; setLayer(next); setTimeout(step, 320); }
+    };
+    requestAnimationFrame(fr);
+  };
+  setTimeout(step, 400);
+}
+
+/* ====================== section 1: atlas ====================== */
+function renderAtlas() {
+  const D = App.D, box = $('#atlas'); box.innerHTML = ''; App.atlas = [];
+  D.vgs.forEach((vg, vi) => {
+    let lo = Infinity, hi = -Infinity; for (let ti = 0; ti < D.tsis.length; ti++) { const a = truthAt(vi, ti); for (let i = 0; i < a.length; i++) { if (a[i] < lo) lo = a[i]; if (a[i] > hi) hi = a[i]; } }
+    const p = document.createElement('div'); p.className = 'atlas-panel';
+    p.innerHTML = '<div class="ah"><b>V<sub>g</sub> = ' + vg.toFixed(1) + ' V</b><span>' + fmtNum(lo, 3) + ' … ' + fmtNum(hi, 3) + ' V</span></div><div class="cv"></div>';
+    box.appendChild(p);
+    App.atlas.push({ vi, lo, hi, box: p.querySelector('.cv') });
+  });
+  drawAtlas();
+}
+function drawAtlas() {
+  const D = App.D; if (!App.atlas) return;
+  for (const A of App.atlas) {
+    const w = Math.max(140, A.box.clientWidth), h = 132, stripH = 7, ph = h - stripH - 4;
+    const { c: cv, ctx } = setupCanvas(A.box, w, h);
+    const nT = D.tsis.length, IH = 132; const off = document.createElement('canvas'); off.width = nT; off.height = IH; const o = off.getContext('2d'); const img = o.createImageData(nT, IH);
+    for (let ti = 0; ti < nT; ti++) {
+      const a = truthAt(A.vi, ti), T = D.tsis[ti] + 4;
+      for (let py = 0; py < IH; py++) {
+        const pos = -15 + (py + 0.5) / IH * 30, i = Math.floor((pos + T / 2) / 0.05), q = (py * nT + ti) * 4;
+        if (i >= 0 && i < a.length) { const col = seq((a[i] - A.lo) / (A.hi - A.lo)); img.data[q] = col[0]; img.data[q + 1] = col[1]; img.data[q + 2] = col[2]; img.data[q + 3] = 255; }
+      }
+    }
+    o.putImageData(img, 0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 0, 0, w, ph);
+    const cw = w / nT;
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.setLineDash([2, 2]); ctx.lineWidth = 1;
+    for (const sgn of [-1, 1]) { ctx.beginPath(); for (let ti = 0; ti < nT; ti++) { const y = (sgn * D.tsis[ti] / 2 + 15) / 30 * ph; const x = (ti + 0.5) * cw; ti ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); }
+    ctx.setLineDash([]);
+    for (let ti = 0; ti < nT; ti++) { ctx.fillStyle = tok(SPLIT_VAR[D.split[ti]]); ctx.fillRect(ti * cw, ph + 4, Math.max(1, cw - 0.4), stripH); }
+    A.ctx = ctx; A.w = w; A.ph = ph; A.cw = cw; A.base = ctx.getImageData(0, 0, cv.width, cv.height); A.cv = cv;
+    const pick = ev => { const r = cv.getBoundingClientRect(); return Math.max(0, Math.min(nT - 1, Math.floor((ev.clientX - r.left) / cw))); };
+    cv.addEventListener('pointermove', ev => { const ti = pick(ev); $('#atlasTip').textContent = 'Tsi ' + D.tsis[ti].toFixed(1) + ' nm · Vg ' + D.vgs[A.vi].toFixed(1) + ' V · ' + SPLIT_NAME[D.split[ti]] + ' · click to load'; });
+    cv.addEventListener('pointerleave', () => { $('#atlasTip').textContent = 'Hover a column for its thickness; click to load it in the simulator.'; });
+    cv.addEventListener('click', ev => { const ti = pick(ev); goSim(D.tsis[ti], D.vgs[A.vi]); });
+    cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Potential atlas for Vg ' + D.vgs[A.vi] + ' V');
+  }
+  markAtlas();
+}
+function markAtlas() {
+  if (!App.atlas || !App.D) return; const D = App.D, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const ti = D.tsis.findIndex(t => Math.abs(t - SIM.tsi) < 1e-6), vi = D.vgs.findIndex(v => Math.abs(v - SIM.vg) < 1e-6);
+  for (const A of App.atlas) {
+    if (!A.ctx) continue; A.ctx.save(); A.ctx.setTransform(1, 0, 0, 1, 0, 0); A.ctx.putImageData(A.base, 0, 0); A.ctx.restore();
+    if (ti >= 0 && A.vi === vi) { A.ctx.strokeStyle = tok('--ink'); A.ctx.lineWidth = 2; A.ctx.strokeRect(ti * A.cw - 1.5, 1, A.cw + 3, A.ph - 2); }
+    else if (ti >= 0) { A.ctx.strokeStyle = tok('--ink'); A.ctx.globalAlpha = 0.35; A.ctx.lineWidth = 1; A.ctx.strokeRect(ti * A.cw - 1, 1, A.cw + 2, A.ph - 2); A.ctx.globalAlpha = 1; }
+  }
+}
+function goSim(tsi, vg, fit) {
+  stopPlay(); SIM.tsi = Math.round(tsi * 10) / 10; SIM.vg = Math.round(vg * 100) / 100; SIM.layer = 8;
+  if (fit != null) setFit(fit);
+  $('#tsi').value = SIM.tsi; $('#vg').value = SIM.vg; updateCtlLabels(); renderLensUI(); request(SIM.tsi, SIM.vg);
+  document.getElementById('sim').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+}
+
+/* ====================== section 2: graph & features ====================== */
+const FEATS = [
+  ['Position', [[0, 'y_norm', 'position ÷ total thickness']]],
+  ['Material', [[1, 'is_top_oxide', '1 in the top dielectric'], [2, 'is_semiconductor', '1 in the silicon'], [3, 'is_bottom_oxide', '1 in the bottom dielectric'], [4, 'epsilon_norm', 'εr ÷ 11.7 (3.9/11.7 in dielectric)']]],
+  ['Distances (÷ total thickness)', [[5, 'distance_to_top_gate', '|y − 0|'], [6, 'distance_to_bottom_gate', '|y − T|'], [7, 'distance_to_top_interface', '|y − 2 nm|'], [8, 'distance_to_bottom_interface', '|y − (2 + Tsi)|'], [9, 'signed_distance_to_si_boundary', 'nearest interface, negative inside Si']]],
+  ['Device (same at every node)', [[10, 'Tsi_norm', 'Tsi ÷ 26 nm'], [11, 'Tox_norm', '2 nm ÷ 26 nm'], [12, 'total_thickness_norm', 'T ÷ 30 nm'], [13, 'Vg_norm', 'Vg ÷ 1.2 V']]],
+  ['Boundary flags', [[14, 'is_top_gate_boundary', '1 on the first node'], [15, 'is_bottom_gate_boundary', '1 on the last node']]],
+];
+function renderChain() {
+  const c = App.curU; if (!c) return; const g = c.g, n = g.n; const sel = Math.max(0, Math.min(n - 1, SIM.featNode));
+  const box = $('#chain'); const W = Math.max(280, box.clientWidth), H = 132; const svg = makeSvg(box, W, H);
+  const span = W < 480 ? 11 : 17; let a = Math.max(0, sel - Math.floor(span / 2)); let b = Math.min(n - 1, a + span - 1); a = Math.max(0, b - span + 1);
+  const xs = lin(a - 0.6, b + 0.6, 10, W - 10), cy = 58;
+  // overview bar
+  const ov = lin(0, n, 10, W - 10);
+  for (const [r0, r1, cls] of [[0, 40, 'r-ox'], [40, n - 40, 'r-si'], [n - 40, n, 'r-ox']]) el('rect', { x: ov(r0), y: 6, width: ov(r1) - ov(r0), height: 8, class: cls }, svg);
+  el('rect', { x: ov(a), y: 4, width: Math.max(2, ov(b + 1) - ov(a)), height: 12, fill: 'none', stroke: tok('--accent'), 'stroke-width': 1.5 }, svg);
+  const ovHit = el('rect', { x: 10, y: 0, width: W - 20, height: 20, fill: 'transparent', style: 'cursor:pointer' }, svg);
+  ovHit.addEventListener('click', ev => { const r = svg.getBoundingClientRect(); SIM.featNode = Math.max(0, Math.min(n - 1, Math.round(ov.inv(ev.clientX - r.left)))); renderChain(); });
+  // region shading
+  for (let i = a; i <= b; i++) el('rect', { x: xs(i - 0.5), y: cy - 20, width: xs(i + 0.5) - xs(i - 0.5) + 0.5, height: 40, class: ['r-ox', 'r-si', 'r-ox'][g.region[i]] }, svg);
+  for (let i = a; i < b; i++) {
+    const flag = g.region[i] !== g.region[i + 1];
+    el('line', { x1: xs(i) + 8, x2: xs(i + 1) - 8, y1: cy - 3, y2: cy - 3, stroke: flag ? tok('--err') : tok('--muted'), 'stroke-width': flag ? 2 : 1.2 }, svg);
+    el('line', { x1: xs(i) + 8, x2: xs(i + 1) - 8, y1: cy + 3, y2: cy + 3, stroke: flag ? tok('--err') : tok('--muted'), 'stroke-width': flag ? 2 : 1.2 }, svg);
+    el('path', { d: 'M' + (xs(i + 1) - 8) + ' ' + (cy - 3) + 'l-4 -3v6z', fill: flag ? tok('--err') : tok('--muted') }, svg);
+    el('path', { d: 'M' + (xs(i) + 8) + ' ' + (cy + 3) + 'l4 -3v6z', fill: flag ? tok('--err') : tok('--muted') }, svg);
+  }
+  for (let i = a; i <= b; i++) {
+    const isSel = i === sel; const circ = el('circle', { cx: xs(i), cy, r: isSel ? 8 : 6, fill: isSel ? tok('--accent') : tok('--surface'), stroke: isSel ? tok('--accent') : tok('--ink-2'), 'stroke-width': 1.5, style: 'cursor:pointer', tabindex: 0, role: 'button', 'aria-label': 'Node ' + i }, svg);
+    circ.addEventListener('click', () => { SIM.featNode = i; renderChain(); });
+    circ.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); SIM.featNode = i; renderChain(); } });
+    if ((i - a) % (W < 480 ? 3 : 4) === 0 || isSel) txt(svg, xs(i), cy + 34, String(i), isSel ? 'lab-ink' : 'tick', 'middle');
+  }
+  txt(svg, 10, H - 8, W < 480 ? 'node index · vermilion = interface edge' : 'node index · arrows are directed edges · vermilion = interface edge', 'lab');
+  // feature table
+  const X = g.X, o = sel * 16; let html = '';
+  for (const [grp, rows] of FEATS) {
+    html += '<tr class="grp"><td colspan="4">' + grp + '</td></tr>';
+    for (const [idx, name, desc] of rows) {
+      const v = X[o + idx]; const signed = idx === 9; const glob = idx >= 10 && idx <= 13;
+      let bar; if (signed) { const w = Math.min(50, Math.abs(v) * 100); bar = '<div class="bar signed"><span style="left:' + (v < 0 ? 50 - w : 50) + '%;width:' + w + '%"></span></div>'; }
+      else bar = '<div class="bar"><span style="left:0;width:' + Math.min(100, v * 100) + '%"></span></div>';
+      html += '<tr' + (glob ? ' class="global"' : '') + '><td class="i">' + idx + '</td><td class="n">' + name + '<small>' + desc + '</small></td><td class="v">' + fmtNum(v, 4) + '</td><td class="b">' + bar + '</td></tr>';
+    }
+  }
+  $('#featTable').innerHTML = html;
+  const dyn = 0.05 / g.total, inc = [];
+  if (sel > 0) inc.push('from node ' + (sel - 1) + ' (above): [' + fmtNum(dyn, 5) + ', ' + dyn.toFixed(5) + ', ' + (g.region[sel - 1] !== g.region[sel] ? 1 : 0) + ']');
+  if (sel < n - 1) inc.push('from node ' + (sel + 1) + ' (below): [' + fmtNum(-dyn, 5) + ', ' + dyn.toFixed(5) + ', ' + (g.region[sel + 1] !== g.region[sel] ? 1 : 0) + ']');
+  $('#edgeCap').innerHTML = '<b>Node ' + sel + '</b> of the ' + c.tsi.toFixed(1) + ' nm, ' + c.vg.toFixed(2) + ' V graph. Incoming edges, as [signed_dy, |dy|, interface_flag]: ' + inc.join('; ') + '.' + (inc.length === 1 ? ' A gate node has only one neighbor, so its mean is over one message.' : '');
+}
+
+/* ====================== section 3: receptive field ====================== */
+function renderRF() {
+  const c = App.curU; if (!c) return; const box = $('#rfFig'); const W = Math.max(280, box.clientWidth), H = 118; const svg = makeSvg(box, W, H);
+  const half = c.g.total / 2, xs = lin(-half - 0.6, half + 0.6, 8, W - 8), y0 = 34, y1 = 70;
+  regionsInto(svg, xs, half, y0, y1, false);
+  const rf = 8 * 0.05;
+  el('rect', { x: xs(-rf - 0.025), y: y0 - 6, width: Math.max(2, xs(rf + 0.025) - xs(-rf - 0.025)), height: y1 - y0 + 12, fill: tok('--accent'), opacity: 0.85 }, svg);
+  el('line', { x1: xs(0), x2: xs(0), y1: y0 - 12, y2: y1 + 12, stroke: tok('--ink'), 'stroke-width': 1 }, svg);
+  txt(svg, xs(0), y0 - 16, '±0.40 nm after 8 layers', 'lab-ink', 'middle');
+  const ar = y1 + 22; el('line', { x1: xs(0), x2: xs(half), y1: ar, y2: ar, stroke: tok('--muted'), 'stroke-width': 1 }, svg);
+  el('path', { d: 'M' + xs(half) + ' ' + ar + 'l-6 -3v6z', fill: tok('--muted') }, svg);
+  const hops = Math.round(half / 0.05);
+  txt(svg, (xs(0) + xs(half)) / 2, ar + 15, hops + ' hops from the center to the gate', 'lab', 'middle');
+  $('#rfHops').textContent = hops + ' hops (' + half.toFixed(1) + ' nm)';
+  $('#rfCap').textContent = 'The ' + c.tsi.toFixed(1) + ' nm device from the simulator, drawn to scale (2 nm dielectric on each side). The indigo sliver is every node the center node can hear from after eight layers: 17 of ' + c.g.n + ' nodes, ' + (1700 / c.g.n).toFixed(1) + '% of the stack.';
+}
+
+/* ====================== section 4: derivatives ====================== */
+function lineChart(box, opts) {
+  const W = Math.max(260, box.clientWidth), H = opts.h || 140, m = { l: 54, r: 10, t: 8, b: opts.xlab ? 30 : 16 };
+  const svg = makeSvg(box, W, H); const xs = lin(opts.x0, opts.x1, m.l, W - m.r);
+  let lo = Infinity, hi = -Infinity; for (const s of opts.series) for (const p of s.pts) { if (!isFinite(p[1])) continue; lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); }
+  if (opts.clip) { lo = Math.max(lo, opts.clip[0]); hi = Math.min(hi, opts.clip[1]); }
+  if (opts.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  if (!isFinite(lo)) { lo = 0; hi = 1; } const pad = (hi - lo || Math.abs(hi) || 1) * 0.08; lo -= pad; hi += pad;
+  const ys = lin(lo, hi, H - m.b, m.t);
+  if (opts.regions) regionsInto(svg, xs, opts.regions, m.t, H - m.b, false);
+  const tk = nice(lo, hi, 4), d = dec(tk.step);
+  for (const t of tk.ticks) { if (t < lo || t > hi) continue; el('line', { x1: m.l, x2: W - m.r, y1: ys(t), y2: ys(t), class: t === 0 && opts.zero ? 'zero' : 'grid' }, svg); txt(svg, m.l - 6, ys(t) + 3.5, opts.fmt ? opts.fmt(t) : fmtNum(t, d), 'tick', 'end'); }
+  if (opts.xlab) { for (let t = Math.ceil(opts.x0 / 5) * 5; t <= opts.x1; t += 5) txt(svg, xs(t), H - m.b + 14, String(t).replace('-', '−'), 'tick', 'middle'); txt(svg, W - m.r, H - 2, opts.xlab, 'lab', 'end'); }
+  const defs = el('defs', null, svg); const id = 'cl' + Math.random().toString(36).slice(2, 8); const cp = el('clipPath', { id }, defs); el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }, cp);
+  const g = el('g', { 'clip-path': 'url(#' + id + ')' }, svg);
+  for (const s of opts.series) {
+    let dd = '', pen = false;
+    for (const p of s.pts) { if (!isFinite(p[1])) { pen = false; continue; } dd += (pen ? 'L' : 'M') + xs(p[0]).toFixed(1) + ' ' + ys(Math.max(lo, Math.min(hi, p[1]))).toFixed(1); pen = true; }
+    el('path', { d: dd, class: s.cls }, g);
+  }
+  return { svg, xs, ys };
+}
+function renderDerivs() {
+  const c = App.curU; if (!c) return; const n = c.g.n, half = c.g.total / 2, y = c.g.y;
+  const X0 = -half - 0.3, X1 = half + 0.3;
+  const P = (a) => Array.from({ length: n }, (_, i) => [y[i] - half, a[i]]);
+  const S = [];
+  if (c.truth) S.push({ pts: P(c.truth), cls: 'ln-truth' });
+  S.push({ pts: P(c.pred), cls: 'ln-pred' });
+  lineChart($('#dPsi'), { x0: X0, x1: X1, series: S, regions: half, h: 130 });
+  const E = a => { const o = []; for (let i = 0; i < n - 1; i++) o.push([(y[i] + y[i + 1]) / 2 - half, -(a[i + 1] - a[i]) / 0.05 * 10]); return o; };
+  const SE = []; if (c.truth) SE.push({ pts: E(c.truth), cls: 'ln-truth' }); SE.push({ pts: E(c.pred), cls: 'ln-pred' });
+  lineChart($('#dE'), { x0: X0, x1: X1, series: SE, regions: half, zero: true, h: 130 });
+  const K = 6.466e20; // cm^-3 per (V/nm^2) in silicon
+  const rho = a => { const o = []; for (let i = 1; i < n - 1; i++) { const inner = c.g.region[i - 2] === 1 && c.g.region[i + 2] === 1; o.push([y[i] - half, inner ? -(a[i + 1] - 2 * a[i] + a[i - 1]) / 0.0025 * K : NaN]); } return o; };
+  const rt = c.truth ? rho(c.truth) : null, rp = rho(c.pred);
+  let mx = 0; for (const p of (rt || rp)) if (isFinite(p[1])) mx = Math.max(mx, Math.abs(p[1]));
+  const ex = Math.floor(Math.log10(mx || 1e17)), unit = Math.pow(10, ex);
+  const SR = []; if (rt) SR.push({ pts: rt.map(p => [p[0], p[1] / unit]), cls: 'ln-truth' }); SR.push({ pts: rp.map(p => [p[0], p[1] / unit]), cls: 'ln-pred' });
+  let clip = null; if (rt) { let a = Infinity, b = -Infinity; for (const p of SR[0].pts) if (isFinite(p[1])) { a = Math.min(a, p[1]); b = Math.max(b, p[1]); } const sp = Math.max(b - a, Math.abs(b), Math.abs(a), 0.5); clip = [a - sp * 0.9, b + sp * 0.9]; }
+  lineChart($('#dRho'), { x0: X0, x1: X1, series: SR, regions: half, zero: true, h: 140, clip, xlab: 'position from body center (nm)' });
+  $('#dRhoLab').textContent = 'Net charge density ρ/q in the silicon (10' + sup(ex) + ' cm⁻³), from ρ = −ε·ψ″';
+  $('#dCase').textContent = 'Tsi ' + c.tsi.toFixed(1) + ' nm · Vg ' + c.vg.toFixed(2) + ' V' + (c.truth ? '' : ' · no TCAD file');
+}
+
+/* ====================== section 5: training ====================== */
+function renderLoss() {
+  const D = App.D, L = D.log, ep = L.train_total_loss.length;
+  const chips = $('#lossChips'); if (!chips.childElementCount) {
+    for (const [k, lab] of [['total', 'Total'], ['value', 'Value'], ['grad', 'Slope'], ['curv', 'Curvature']]) {
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.k = k; b.innerHTML = '<i></i>' + lab; b.setAttribute('aria-pressed', String(SIM.lossOn[k]));
+      b.addEventListener('click', () => { SIM.lossOn[k] = !SIM.lossOn[k]; b.setAttribute('aria-pressed', String(SIM.lossOn[k])); renderLoss(); }); chips.appendChild(b);
+    }
+  }
+  const box = $('#lossFig'), W = Math.max(280, box.clientWidth), H = 250, m = { l: 48, r: 12, t: 12, b: 26 };
+  const svg = makeSvg(box, W, H), xs = lin(1, ep, m.l, W - m.r), ys = logS(5e-5, 60, H - m.b, m.t);
+  for (let e = -4; e <= 1; e++) { const v = Math.pow(10, e); el('line', { x1: m.l, x2: W - m.r, y1: ys(v), y2: ys(v), class: 'grid' }, svg); txt(svg, m.l - 6, ys(v) + 3.5, '10' + sup(e), 'tick', 'end'); }
+  for (const t of [1, 100, 200, 300, 400, 500, 600]) txt(svg, xs(t), H - m.b + 14, String(t), 'tick', 'middle');
+  txt(svg, W - m.r, H - 2, 'epoch', 'lab', 'end');
+  const series = { total: ['train_total_loss', 'val_total_loss', 'l-val'], value: ['train_value_loss', 'val_value_loss', 'c-value'], grad: ['train_grad_loss', 'val_grad_loss', 'c-grad'], curv: ['train_curv_loss', 'val_curv_loss', 'c-curv'] };
+  const pth = arr => { let d = ''; const step = Math.max(1, Math.floor(ep / (W - m.l - m.r))); for (let i = 0; i < ep; i += step) d += (i ? 'L' : 'M') + xs(i + 1).toFixed(1) + ' ' + ys(arr[i]).toFixed(1); return d; };
+  for (const k of ['curv', 'grad', 'value', 'total']) {
+    if (!SIM.lossOn[k]) continue; const [tr, va, cls] = series[k];
+    el('path', { d: pth(L[tr]), class: (k === 'total' ? 'l-val' : cls) + ' thin', style: k === 'total' ? 'stroke:var(--muted)' : '' }, svg);
+    el('path', { d: pth(L[va]), class: (k === 'total' ? 'l-val' : cls) + ' thick' }, svg);
+    const last = L[va][ep - 1]; txt(svg, W - m.r - 2, ys(last) - 5, k === 'total' ? 'total' : (k === 'grad' ? 'slope' : k === 'curv' ? 'curvature' : 'value'), 'lab-ink', 'end');
+  }
+  el('line', { x1: xs(556), x2: xs(556), y1: m.t, y2: H - m.b, class: 'mark' }, svg);
+  txt(svg, xs(556) - 4, m.t + 10, 'best · 556', 'lab-ink', 'end');
+  el('line', { x1: xs(656), x2: xs(656), y1: m.t, y2: H - m.b, class: 'mark' }, svg);
+  // LR
+  const lb = $('#lrFig'), LH = 62, lsvg = makeSvg(lb, W, LH), lys = logS(8e-7, 1.3e-3, LH - 16, 6);
+  for (const e of [-6, -3]) { el('line', { x1: m.l, x2: W - m.r, y1: lys(Math.pow(10, e)), y2: lys(Math.pow(10, e)), class: 'grid' }, lsvg); txt(lsvg, m.l - 6, lys(Math.pow(10, e)) + 3.5, '10' + sup(e), 'tick', 'end'); }
+  let d = ''; for (let i = 0; i < ep; i++) { const x = xs(i + 1).toFixed(1); const yv = lys(L.learning_rate[i]).toFixed(1); d += (i ? 'L' + x + ' ' + lys(L.learning_rate[i - 1]).toFixed(1) + 'L' : 'M') + x + ' ' + yv; }
+  el('path', { d, class: 'lr' }, lsvg);
+}
+function renderOptuna() {
+  const D = App.D, T = D.optuna, box = $('#optFig'), W = Math.max(280, box.clientWidth), H = 250, m = { l: 52, r: 14, t: 14, b: 32 };
+  const svg = makeSvg(box, W, H), xs = logS(7e-4, 0.07, m.l, W - m.r), ys = logS(0.008, 1.3, H - m.b, m.t);
+  el('rect', { x: xs(0.001), y: m.t, width: xs(0.05) - xs(0.001), height: H - m.t - m.b, class: 'range' }, svg);
+  txt(svg, xs(0.05) - 6, m.t + 14, 'search range for λc', 'lab', 'end');
+  for (const v of [0.01, 0.1, 1]) { el('line', { x1: m.l, x2: W - m.r, y1: ys(v), y2: ys(v), class: 'grid' }, svg); txt(svg, m.l - 6, ys(v) + 3.5, String(v), 'tick', 'end'); }
+  for (const v of [0.001, 0.003, 0.01, 0.03]) txt(svg, xs(v), H - m.b + 14, String(v), 'tick', 'middle');
+  txt(svg, W - m.r, H - 2, 'λc (curvature weight)', 'lab', 'end');
+  txt(svg, 12, (m.t + H - m.b) / 2, 'best val loss', 'lab', 'middle', { transform: 'rotate(-90 12 ' + ((m.t + H - m.b) / 2) + ')' });
+  const sorted = T.slice().sort((a, b) => a.v - b.v), top = new Set(sorted.slice(0, 6).map(t => t.n));
+  for (const t of T) {
+    const cx = xs(t.p.lambda_curv), cy = ys(t.v), isTop = top.has(t.n);
+    el('circle', { cx, cy, r: isTop ? 5 : 4, class: 'pt' + (isTop ? ' top' : '') }, svg);
+    if (t.n === 11) txt(svg, cx + 8, cy + 4, 'trial 11 · chosen', 'lab-ink');
+  }
+  $('#optCap').textContent = 'Indigo: the six best trials (11, 21, 14, 29, 10, 24), all with λc between 0.00102 and 0.00129. Trial 11 reached a validation loss of ' + sorted[0].v.toFixed(4) + ' in 50 epochs.';
+}
+
+/* ====================== section 6: results ====================== */
+function renderTiles() {
+  const s = App.D.summary;
+  $('#tiles').innerHTML = [['train', '--train', 'Train', 324], ['val', '--val', 'Validation', 68], ['test', '--test', 'Test', 72]].map(([k, v, lab, ng]) =>
+    '<div class="tile"><div class="k"><i style="background:var(' + v + ')"></i>' + lab + ' · ' + ng + ' graphs</div><div class="v">' + (s[k].mean_absolute_error_V * 1000).toFixed(2) + ' mV</div><div class="s">mean |error| over ' + s[k].num_nodes.toLocaleString() + ' nodes · mean APE ' + s[k].mean_ape_percent_valid_only.toFixed(1) + '% where |ψ| ≥ 5 mV</div></div>').join('');
+}
+function renderErrors() {
+  const D = App.D, box = $('#errFig'); box.innerHTML = '';
+  const W = Math.max(280, box.clientWidth), rowH = 92, H = rowH * 4 + 26, m = { l: 74, r: 10 };
+  const svg = makeSvg(box, W, H), xs = lin(2.6, 26.4, m.l, W - m.r);
+  const rel = SIM.errRel, ysF = rel ? (r0) => logS(0.001, 10, r0 + rowH - 12, r0 + 8) : (r0) => logS(0.2, 30, r0 + rowH - 12, r0 + 8);
+  const ticks = rel ? [[0.001, '0.1%'], [0.01, '1%'], [0.1, '10%'], [1, '100%'], [10, '1000%']] : [[0.3, '0.3'], [1, '1'], [3, '3'], [10, '10'], [30, '30']];
+  D.vgs.forEach((vg, vi) => {
+    const r0 = vi * rowH, ys = ysF(r0);
+    txt(svg, 4, r0 + rowH / 2, vg.toFixed(1) + ' V', 'lab-ink');
+    for (const [v, l] of ticks) { el('line', { x1: m.l, x2: W - m.r, y1: ys(v), y2: ys(v), class: 'grid' }, svg); txt(svg, m.l - 5, ys(v) + 3.5, l, 'tick', 'end'); }
+    if (rel) { el('line', { x1: m.l, x2: W - m.r, y1: ys(1), y2: ys(1), class: 'mark' }, svg); }
+    D.tsis.forEach((t, ti) => {
+      const mt = D.metrics[vi][ti], v = rel ? mt[3] : mt[0] * 1000; const sp = D.split[ti];
+      const dot = el('circle', { cx: xs(t), cy: ys(Math.max(rel ? 0.001 : 0.2, Math.min(v, rel ? 10 : 30))), r: sp === 't' ? 2.4 : 3.4, class: sp === 't' ? 's-train' : sp === 'v' ? 's-val' : 's-test', style: 'cursor:pointer' }, svg);
+      el('title', null, dot, 'Tsi ' + t.toFixed(1) + ' nm, Vg ' + vg + ' V (' + SPLIT_NAME[sp] + '): mean |error| ' + (mt[0] * 1000).toFixed(2) + ' mV, RMSE ÷ range ' + (mt[3] * 100).toFixed(1) + '%');
+      dot.addEventListener('click', () => goSim(t, vg));
+    });
+  });
+  for (const t of [5, 10, 15, 20, 25]) txt(svg, xs(t), H - 12, String(t), 'tick', 'middle');
+  txt(svg, W - m.r, H - 1, 'Tsi (nm)' + (rel ? ' · dashed line: error equals the whole profile range' : ' · mV'), 'lab', 'end');
+}
+
+/* ====================== controls ====================== */
+function rangeMap(box, min, max, segs, dots, caps) {
+  const pct = v => (100 * (v - min) / (max - min)) + '%'; let h = '';
+  for (const [a, b] of segs) h += '<span class="seg" style="left:' + pct(a) + ';width:calc(' + pct(b) + ' - ' + pct(a) + ')"></span>';
+  for (const d of dots) h += '<span class="dot" style="left:' + pct(d) + '"></span>';
+  for (const [v, t, al] of caps) h += '<span class="cap" style="left:' + pct(v) + ';transform:translateX(' + (al === 'end' ? '-100%' : al === 'mid' ? '-50%' : '0') + ')">' + t + '</span>';
+  box.innerHTML = h;
+}
+function updateCtlLabels() { $('#tsiVal').textContent = SIM.tsi.toFixed(1) + ' nm'; $('#vgVal').textContent = SIM.vg.toFixed(2) + ' V' + (SIM.vg <= 0.65 ? ' · OFF' : SIM.vg >= 1.15 ? ' · ON' : ''); $('#meshNote').textContent = MESH_NOTE[SIM.mesh]; }
+function setFit(on) { SIM.yFit = on; $('#yFit').setAttribute('aria-pressed', String(on)); $('#yFix').setAttribute('aria-pressed', String(!on)); }
+function wire() {
+  rangeMap($('#tsiMap'), 2, 30, [[3, 26]], [], [[3, 'trained 3.0', 'start'], [26, '26.0 nm', 'end']]);
+  rangeMap($('#vgMap'), 0.5, 1.3, [], [0.6, 0.8, 1.0, 1.2], [[0.6, '0.6 OFF', 'mid'], [0.8, '0.8', 'mid'], [1.0, '1.0', 'mid'], [1.2, '1.2 V ON', 'mid']]);
+  const onInput = () => { stopPlay(); SIM.tsi = Math.round(parseFloat($('#tsi').value) * 10) / 10; SIM.vg = Math.round(parseFloat($('#vg').value) * 100) / 100; if (SIM.layer !== 8) { SIM.layer = 8; renderLensUI(); } updateCtlLabels(); if (App.D) request(SIM.tsi, SIM.vg); };
+  $('#tsi').addEventListener('input', onInput); $('#vg').addEventListener('input', onInput);
+  $('#yFit').addEventListener('click', () => { setFit(true); renderSim(); });
+  $('#yFix').addEventListener('click', () => { setFit(false); renderSim(); });
+  $('#randTest').addEventListener('click', () => { if (!App.D) return; const D = App.D; const ts = D.tsis.filter((t, i) => D.split[i] === 's'); goSim(ts[Math.floor(Math.random() * ts.length)], D.vgs[Math.floor(Math.random() * 4)]); });
+  $('#play').addEventListener('click', play);
+  $('#nPrev').addEventListener('click', () => { SIM.featNode = Math.max(0, SIM.featNode - 1); renderChain(); });
+  $('#nNext').addEventListener('click', () => { if (App.curU) SIM.featNode = Math.min(App.curU.g.n - 1, SIM.featNode + 1); renderChain(); });
+  const jumps = $('#nJumps');
+  for (const [lab, f] of [['top gate', n => 0], ['last oxide node', n => 39], ['first silicon node', n => 40], ['body center', n => Math.floor(n / 2)], ['bottom gate', n => n - 1]]) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = lab; b.addEventListener('click', () => { if (!App.curU) return; SIM.featNode = f(App.curU.g.n); renderChain(); }); jumps.appendChild(b);
+  }
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { const [t, v] = b.dataset.go.split(',').map(Number); goSim(t, v, true); }));
+  $('#eAbs').addEventListener('click', () => { SIM.errRel = false; $('#eAbs').setAttribute('aria-pressed', 'true'); $('#eRel').setAttribute('aria-pressed', 'false'); renderErrors(); });
+  $('#eRel').addEventListener('click', () => { SIM.errRel = true; $('#eRel').setAttribute('aria-pressed', 'true'); $('#eAbs').setAttribute('aria-pressed', 'false'); renderErrors(); });
+  document.querySelectorAll('[data-mesh]').forEach(b => b.addEventListener('click', () => {
+    const m = b.dataset.mesh; if (m === 'random' && SIM.mesh === 'random') SIM.seed++; SIM.mesh = m;
+    document.querySelectorAll('[data-mesh]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.mesh === m)));
+    stopPlay(); SIM.layer = 8; renderLensUI(); updateCtlLabels(); if (App.D) request(SIM.tsi, SIM.vg);
+  }));
+  renderLensUI(); updateCtlLabels();
+}
+function renderStatic() { renderAtlas(); renderLoss(); renderOptuna(); renderTiles(); renderErrors(); }
+function rerenderAll() { if (!App.D) return; renderStatic(); if (App.cur) { renderSim(); renderHeat(); } if (App.curU) { renderChain(); renderRF(); renderDerivs(); } }
+let rzT = null; let lastW = window.innerWidth;
+window.addEventListener('resize', () => { if (Math.abs(window.innerWidth - lastW) < 2) return; lastW = window.innerWidth; clearTimeout(rzT); rzT = setTimeout(rerenderAll, 150); });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(rerenderAll, 30));
+new MutationObserver(() => setTimeout(rerenderAll, 30)).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+async function boot() {
+  wire();
+  try {
+    const [d, w] = await Promise.all([fetch('data.json').then(r => { if (!r.ok) throw new Error('data.json ' + r.status); return r.json(); }), fetch('weights.json').then(r => { if (!r.ok) throw new Error('weights.json ' + r.status); return r.json(); })]);
+    App.D = d; App.meta = w.meta;
+    const wb = b64bytes(w.b64); App.all = new Float32Array(wb.buffer, 0, wb.byteLength / 4); App.W = GNN.viewsFromBuffer(App.meta.manifest, App.all);
+    const pb = b64bytes(d.profiles_b64); App.prof = new Float32Array(pb.buffer, 0, pb.byteLength / 4);
+    document.body.classList.add('ready');
+    if (typeof Worker !== 'undefined') startWorker();
+    renderStatic();
+    request(SIM.tsi, SIM.vg);
+  } catch (err) {
+    const l = document.querySelector('.loading'); if (l) l.textContent = 'Could not load the model files (' + err.message + '). Reload the page to try again.';
+  }
+}
+boot();
+</script>
+</body>
+</html>
